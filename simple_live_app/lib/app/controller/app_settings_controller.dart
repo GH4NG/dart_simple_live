@@ -53,6 +53,10 @@ class AppSettingsController extends GetxController {
       LocalStorageService.kDanmuStrokeWidth,
       2.0,
     );
+    danmuLineHeight.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuLineHeight,
+      2.0,
+    );
     danmuTopMargin.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuTopMargin,
       0.0,
