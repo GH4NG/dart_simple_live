@@ -345,6 +345,9 @@ void showPlayerSettings(LiveRoomController controller) {
   var danmakuOpacityFocusNode = AppFocusNode();
   var danmakuStrokeFocusNode = AppFocusNode();
   Utils.showSystemRightDialog(
+    onDismiss: () {
+      controller.focusNode.requestFocus();
+    },
     width: 800.w,
     child: Column(
       children: [
@@ -643,6 +646,9 @@ void showFollowUser(LiveRoomController controller) {
   }
 
   Utils.showSystemRightDialog(
+    onDismiss: () {
+      controller.focusNode.requestFocus();
+    },
     width: 800.w,
     child: Column(
       children: [

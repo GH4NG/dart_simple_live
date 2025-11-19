@@ -238,7 +238,9 @@ class Utils {
           ),
         ),
       ),
-    );
+    ).whenComplete(() {
+      onDismiss?.call();
+    });
   }
 
   static void hideRightDialog() {
