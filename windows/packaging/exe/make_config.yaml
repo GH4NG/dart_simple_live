@@ -1,0 +1,10 @@
+script_template: 'inno_setup.iss'
+display_name: Simple Live
+app_id: 45F6FA98-DA23-4795-8685-60F607317A1F
+publisher: xiaoyaocz
+publisher_url: https://github.com/xiaoyaocz/dart_simple_live
+create_desktop_icon: true
+setup_icon_file: assets/icons/app_icon.ico
+locales:
+    - en
+    - zh

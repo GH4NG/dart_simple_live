@@ -1,0 +1,117 @@
+name: simple_live_app
+version: 1.8.1030+181030
+publish_to: none
+description: 'Simple Live APP'
+environment:
+    sdk: '>=3.10.0'
+
+dependencies:
+    simple_live_core:
+        path: packages/simple_live_core
+    # 图标
+    cupertino_icons: ^1.0.8
+    remixicon: ^1.4.1 #Remix图标
+    flutter_svg: ^2.0.13
+
+    # 框架、工具
+    archive: ^4.0.7 #文件压缩
+    get: ^4.7.2 #状态管理、路由管理、国际化
+    dio: ^5.9.0 #网络请求
+    hive: ^2.2.3 #持久化存储
+    hive_flutter: ^1.1.0 #持久化存储
+    logger: ^2.6.2 #日志
+    intl: ^0.20.2 #国际化
+    qr_flutter: ^4.1.0 #二维码生成
+    dynamic_color: ^1.8.1 #动态颜色
+    path: any
+    udp: ^5.0.3 #UDP
+    uuid: ^4.5.1 #UUID
+    synchronized: ^3.3.1 #线程安全
+    collection: ^1.18.0
+
+    #Widget
+    flutter_staggered_grid_view: ^0.7.0 #瀑布流/GridView
+    easy_refresh: ^3.4.0 #下拉刷新、上拉加载
+    extended_image: ^10.0.1 #拓展Image,支持缓存
+    flutter_smart_dialog: ^4.9.8+7 #各种弹窗 Toast/Dialog/Popup
+    flutter_sticky_header: ^0.8.0 #吸顶
+    lottie: ^3.3.2 #lottie动画
+    canvas_danmaku:
+        git:
+            url: https://github.com/GH4NG/canvas_danmaku.git
+            ref: main
+
+    #系统交互
+    package_info_plus: ^9.0.0 #包信息
+    device_info_plus: ^12.2.0 #设备信息
+    url_launcher: ^6.3.1 #打开链接
+    share_plus: ^12.0.1 #分享
+    path_provider: ^2.1.5 #常用路径
+    cross_file: ^0.3.5 #跨平台文件
+    permission_handler: ^12.0.1 #权限处理
+    image_gallery_saver_plus: ^4.0.1 #图片保存到相册
+    screen_brightness: ^2.1.7 #亮度控制
+    auto_orientation_v2: ^2.3.6 #屏幕方向
+    wakelock_plus: ^1.4.0 #屏幕常亮
+    file_picker: ^10.1.2 #文件选择
+    window_manager: ^0.5.1 #窗口管理
+    floating: ^6.0.0 #PIP画中画
+    flutter_inappwebview: ^6.1.5 #WebView
+    connectivity_plus: ^7.0.0 #网络状态
+    flutter_single_instance: ^1.6.1 #应用启动检测
+    mobile_scanner: ^7.1.3 #二维码扫描
+    volume_controller: ^3.4.0
+
+    # 网络相关
+    webdav_client: ^1.2.2 # WebDAV
+    shelf: ^1.4.1
+    shelf_router: ^1.1.4
+    network_info_plus: ^7.0.0
+    signalr_netcore: ^1.3.9 #SignalR
+
+    # 视频播放
+    fvp: ^0.35.1
+
+    flutter:
+        sdk: flutter
+    flutter_localizations:
+        sdk: flutter
+
+dev_dependencies:
+    flutter_lints: ^6.0.0
+    build_runner: ^2.10.1
+    flutter_launcher_icons: ^0.14.4
+    flutter_native_splash: ^2.4.6
+    flutter_test:
+        sdk: flutter
+
+flutter_launcher_icons:
+    android: true
+    ios: true
+    remove_alpha_ios: true
+    image_path: 'assets/logo.png'
+    image_path_android: 'assets/logo.png'
+    image_path_ios: 'assets/logo.png'
+    adaptive_icon_background: '#ffffff'
+    adaptive_icon_foreground: assets/images/logo/logo.png
+    adaptive_icon_monochrome: assets/images/logo/logo.png
+    macos:
+        generate: true
+        image_path: assets/images/logo/logo.png
+
+flutter_native_splash:
+    android_12:
+        color: '#ffffff'
+        color_dark: '#212121'
+    color: '#ffffff'
+    color_dark: '#212121'
+    image: assets/images/logo/logo.png
+    image_dark: assets/images/logo/logo.png
+
+flutter:
+    uses-material-design: true
+    assets:
+        - assets/statement.txt
+        - assets/images/
+        - assets/icons/
+        - assets/lotties/

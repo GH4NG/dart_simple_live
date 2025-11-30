@@ -1,0 +1,624 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:simple_live_app/app/constant.dart';
+import 'package:simple_live_app/app/controller/app_settings_controller.dart';
+import 'package:simple_live_app/app/event_bus.dart';
+import 'package:simple_live_app/app/log.dart';
+import 'package:simple_live_app/app/sites.dart';
+import 'package:simple_live_app/app/utils.dart';
+import 'package:simple_live_app/app/utils/duration_2str.dart';
+import 'package:simple_live_app/models/db/follow_user.dart';
+import 'package:simple_live_app/models/db/follow_user_tag.dart';
+import 'package:simple_live_app/models/db/history.dart';
+import 'package:simple_live_app/services/db_service.dart';
+import 'package:simple_live_core/simple_live_core.dart';
+import 'package:synchronized/synchronized.dart';
+
+class FollowService extends GetxService {
+  StreamSubscription<dynamic>? subscription;
+
+  static FollowService get instance => Get.find<FollowService>();
+
+  final StreamController _updatedListController = StreamController.broadcast();
+
+  Stream get updatedListStream => _updatedListController.stream;
+
+  /// 关注用户列表
+  RxList<FollowUser> followList = RxList<FollowUser>();
+
+  /// 直播中的用户列表
+  RxList<FollowUser> liveList = RxList<FollowUser>();
+
+  /// 未直播的用户列表
+  RxList<FollowUser> notLiveList = RxList<FollowUser>();
+
+  /// 用户自定义的tag
+  RxList<FollowUserTag> followTagList = RxList<FollowUserTag>();
+
+  /// 当前tag的用户列表
+  RxList<FollowUser> curTagFollowList = RxList<FollowUser>();
+
+  /// 线程安全
+  final _lock = Lock();
+
+  /// 已经更新状态的数量
+  var updatedCount = 0;
+
+  /// 是否正在更新
+  var updating = false.obs;
+
+  Timer? updateTimer;
+
+  int _totalToUpdate = 0;
+
+  int _refreshCycle = 0;
+
+  @override
+  void onInit() {
+    subscription = EventBus.instance.listen(Constant.kUpdateFollow, (data) {
+      if (data is History) {
+        updateFollowHistory(data);
+      } else {
+        loadData(updateStatus: false);
+      }
+    });
+    initTimer();
+    super.onInit();
+  }
+
+  void updateTagName(FollowUserTag followUserTag, String newTagName) {
+    final FollowUserTag newTag = followUserTag.copyWith(tag: newTagName);
+    updateFollowUserTag(newTag);
+    // update item's tag when update tagName
+    for (var i in newTag.userId) {
+      var follow = DBService.instance.followBox.get(i);
+      if (follow != null) {
+        follow.tag = newTagName;
+        addFollow(follow);
+      }
+    }
+  }
+
+  Future<void> updateFollowUserTag(FollowUserTag tag) async {
+    if (tag.tag == '全部') {
+      return;
+    }
+    await DBService.instance.updateFollowTag(tag);
+    // 查找并修改
+    var index = followTagList.indexWhere((oTag) => oTag.id == tag.id);
+    followTagList[index] = tag;
+  }
+
+  Future<void> addFollowUserTag(String tag) async {
+    // 判断待添加tag是否已存在，存在则return
+    if (followTagList.any((item) => item.tag == tag)) {
+      SmartDialog.showToast("标签名重复，修改失败");
+      return;
+    }
+    FollowUserTag item = await DBService.instance.addFollowTag(tag);
+    followTagList.add(item);
+  }
+
+  Future removeFollowUserTag(FollowUserTag tag) async {
+    // 将tag下的所有follow设置为全部
+    for (var i in tag.userId) {
+      var follow = DBService.instance.followBox.get(i);
+      if (follow != null) {
+        follow.tag = "全部";
+        FollowService.instance.addFollow(follow);
+      }
+    }
+    followTagList.remove(tag);
+    await DBService.instance.deleteFollowTag(tag.id);
+  }
+
+  // 获取用户自定义标签列表
+  void getAllTagList() {
+    var list = DBService.instance.getFollowTagList();
+    followTagList.assignAll(list);
+  }
+
+  /// 获取包含“全部”的标签选项列表
+  List<FollowUserTag> getTagOptionsWithAll() {
+    return [
+      FollowUserTag(id: '0', tag: '全部', userId: []),
+      ...followTagList,
+    ];
+  }
+
+  /// 为关注项设置标签（统一逻辑）
+  void setFollowTag(FollowUser item, FollowUserTag targetTag) {
+    // 当前标签对象（可能为“全部”且不在 followTagList 中）
+    FollowUserTag? currentTag;
+    if (item.tag != '全部') {
+      for (final t in followTagList) {
+        if (t.tag == item.tag) {
+          currentTag = t;
+          break;
+        }
+      }
+    }
+
+    // 从旧标签移除
+    if (currentTag != null) {
+      currentTag.userId.remove(item.id);
+      DBService.instance.updateFollowTag(currentTag);
+    }
+
+    // 添加到新标签（跳过“全部”）
+    if (targetTag.tag != '全部') {
+      // targetTag来源于UI选项，需定位真实对象
+      FollowUserTag? tar;
+      for (final t in followTagList) {
+        if (t.tag == targetTag.tag) {
+          tar = t;
+          break;
+        }
+      }
+      if (tar != null) {
+        tar.userId.addIf(!tar.userId.contains(item.id), item.id);
+        DBService.instance.updateFollowTag(tar);
+      }
+    }
+
+    // 更新FollowUser本身
+    item.tag = targetTag.tag;
+    addFollow(item);
+  }
+
+  void filterDataByTag(FollowUserTag tag) {
+    // 清空curTagFollowList
+    curTagFollowList.clear();
+    // 用一个新的列表来存储需要删除的 userId
+    List<String> toRemove = [];
+    for (var id in tag.userId) {
+      if (followList.any((x) => x.id == id)) {
+        // 找到对应的 followUser 添加到 curTagFollowList
+        curTagFollowList.add(followList.firstWhere((x) => x.id == id));
+      } else {
+        // 标记要删除的 id
+        toRemove.add(id);
+      }
+    }
+    // 在遍历结束后统一移除不在 followList 中的 id
+    tag.userId.removeWhere((id) => toRemove.contains(id));
+    // 更新数据库
+    if (toRemove.isNotEmpty) {
+      DBService.instance.updateFollowTag(tag);
+    }
+    // 标签内排序
+    curTagFollowList.sort(
+      (a, b) {
+        if (a.liveStatus.value != b.liveStatus.value) {
+          return b.liveStatus.value.compareTo(a.liveStatus.value);
+        }
+        return b.watchDuration!.toDuration().compareTo(
+          a.watchDuration!.toDuration(),
+        );
+      },
+    );
+  }
+
+  void updateFollowTagOrder(List<FollowUserTag> userTagList) {
+    DBService.instance.updateFollowTagOrder(userTagList);
+  }
+
+  // 添加关注
+  void addFollow(FollowUser follow) {
+    DBService.instance.addFollow(follow);
+  }
+
+  // 取消关注
+  Future<void> removeFollowUser(String id) async {
+    await DBService.instance.deleteFollow(id);
+  }
+
+  // 判断关注是否存在
+  bool getFollowExist(String id) {
+    return DBService.instance.getFollowExist(id);
+  }
+
+  // 更新关注的历史记录
+  void updateFollowHistory(History history) {
+    var follow = followList
+        .where((follow) => follow.id == history.id)
+        .firstOrNull;
+    if (follow == null) {
+      return;
+    } else {
+      follow.watchDuration = history.watchDuration;
+      addFollow(follow);
+    }
+    Log.i("已更新当前播放的观看时长：${follow.watchDuration}");
+  }
+
+  void initTimer() {
+    if (AppSettingsController.instance.autoUpdateFollowEnable.value) {
+      updateTimer?.cancel();
+      _refreshCycle = 0;
+      updateTimer = Timer.periodic(
+        Duration(
+          minutes:
+              AppSettingsController.instance.autoUpdateFollowDuration.value,
+        ),
+        (timer) {
+          CoreLog.i("Update Follow Timer - Cycle: $_refreshCycle");
+          loadData(updateStatus: true, cycle: _refreshCycle);
+          _refreshCycle = (_refreshCycle + 1) % 2; // 2-cycle rotation
+        },
+      );
+    } else {
+      updateTimer?.cancel();
+    }
+  }
+
+  Future<void> loadData({bool updateStatus = true, int? cycle}) async {
+    var list = DBService.instance.getFollowList();
+    getAllTagList();
+    if (list.isEmpty) {
+      updating.value = false;
+      followList.assignAll(list);
+      liveList.clear();
+      notLiveList.clear();
+      _updatedListController.add(0);
+      return;
+    }
+    followList.assignAll(list);
+    if (updateStatus) {
+      startUpdateStatus(cycle: cycle);
+    }
+  }
+
+  void multiRoundPriority() {
+    final historyList = DBService.instance.getHistories();
+    final Map<String, int> historyRankMap = {
+      for (var i = 0; i < historyList.length; i++) historyList[i].id: i,
+    };
+    final int maxRank = historyList.isNotEmpty ? historyList.length : 1;
+
+    Duration maxDuration = Duration.zero;
+    for (var user in followList) {
+      final duration = user.watchDuration!.toDuration();
+      if (duration > maxDuration) {
+        maxDuration = duration;
+      }
+    }
+    final double maxDurationInSeconds = maxDuration.inSeconds > 0
+        ? maxDuration.inSeconds.toDouble()
+        : 1.0;
+    // 简单线性加权组合算法，目前认定观看时长和最近观看时间权重一致
+    // 如果用户历史行为序列非常长：可替换为时间衰减 + 观看时长加权
+    followList.sort((a, b) {
+      // 静态权重
+      const double wDuration = 0.5;
+      const double wRecency = 0.5;
+
+      double normDurationA =
+          a.watchDuration!.toDuration().inSeconds.toDouble() /
+          maxDurationInSeconds;
+      int rankA = historyRankMap[a.id] ?? maxRank;
+      double normRecencyA = (maxRank - rankA).toDouble() / maxRank;
+      double scoreA = (wDuration * normDurationA) + (wRecency * normRecencyA);
+
+      double normDurationB =
+          b.watchDuration!.toDuration().inSeconds.toDouble() /
+          maxDurationInSeconds;
+      int rankB = historyRankMap[b.id] ?? maxRank;
+      double normRecencyB = (maxRank - rankB).toDouble() / maxRank;
+      double scoreB = (wDuration * normDurationB) + (wRecency * normRecencyB);
+
+      return scoreB.compareTo(scoreA);
+    });
+  }
+
+  Future<void> startUpdateStatus({int? cycle}) async {
+    List<FollowUser> usersToUpdate;
+    final totalUsers = followList.length;
+
+    if (cycle != null && totalUsers > 100) {
+      // 简单28
+      final topNCount = (totalUsers * 0.2).round(); // Top 50%
+      final bottomNCount = (totalUsers * 0.2).round(); // Bottom 20%
+      final middlePartEndIndex = totalUsers - bottomNCount;
+      multiRoundPriority();
+      final topNUsers = followList.sublist(0, topNCount);
+      final middleUsers = followList.sublist(topNCount, middlePartEndIndex);
+      if (cycle == 0) {
+        usersToUpdate = topNUsers;
+        CoreLog.i(
+          "Update Follow: Cycle 0, updating top ${usersToUpdate.length}/$totalUsers users.",
+        );
+      } else {
+        usersToUpdate = [...topNUsers, ...middleUsers];
+        CoreLog.i(
+          "Update Follow: Cycle 1, updating top+middle ${usersToUpdate.length}/$totalUsers users.",
+        );
+      }
+    } else {
+      usersToUpdate = List.from(followList);
+      if (cycle != null) {
+        CoreLog.i(
+          "Update Follow: List <= 100, updating all ${usersToUpdate.length} users.",
+        );
+      }
+    }
+
+    _totalToUpdate = usersToUpdate.length;
+    updatedCount = 0;
+    updating.value = true;
+
+    if (_totalToUpdate == 0) {
+      updating.value = false;
+      filterData();
+      return;
+    }
+
+    var threadCount =
+        AppSettingsController.instance.updateFollowThreadCount.value;
+
+    var tasks = <Future>[];
+    for (var i = 0; i < threadCount; i++) {
+      tasks.add(
+        Future(() async {
+          var start = i * usersToUpdate.length ~/ threadCount;
+          var end = (i + 1) * usersToUpdate.length ~/ threadCount;
+
+          if (end > usersToUpdate.length) {
+            end = usersToUpdate.length;
+          }
+          var items = usersToUpdate.sublist(start, end);
+          for (var item in items) {
+            await updateLiveStatus(item);
+          }
+        }),
+      );
+    }
+    await Future.wait(tasks);
+  }
+
+  Future updateLiveStatus(FollowUser item) async {
+    try {
+      var site = Sites.allSites[item.siteId]!;
+      // 先只查状态
+      var isLiving = await site.liveSite.getLiveStatus(roomId: item.roomId);
+      item.liveStatus.value = isLiving ? 2 : 1;
+      if (item.liveStatus.value == 2) {
+        // 只有正在直播时才查详细信息
+        var detail = await site.liveSite.getRoomDetail(roomId: item.roomId);
+        item
+          ..liveTitle = detail.title
+          ..liveAreaName = detail.areaName
+          ..liveStartTime = detail.showTime;
+      } else {
+        item.liveStartTime = null;
+      }
+    } catch (e) {
+      Log.logPrint(e);
+      item.liveStatus.value = 0;
+      item.liveStartTime = null;
+    } finally {
+      await _lock.synchronized(() {
+        updatedCount++;
+      });
+      if (updatedCount >= _totalToUpdate) {
+        filterData();
+        updating.value = false;
+      }
+    }
+  }
+
+  void filterData() {
+    followList.sort(
+      (a, b) {
+        if (a.liveStatus.value != b.liveStatus.value) {
+          return b.liveStatus.value.compareTo(a.liveStatus.value);
+        }
+        return b.watchDuration!.toDuration().compareTo(
+          a.watchDuration!.toDuration(),
+        );
+      },
+    );
+    liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
+    notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
+    _updatedListController.add(0);
+  }
+
+  Future<void> exportFile() async {
+    if (followList.isEmpty) {
+      SmartDialog.showToast("列表为空");
+      return;
+    }
+
+    try {
+      var status = await Utils.checkStoragePermission();
+      if (!status) {
+        SmartDialog.showToast("无权限");
+        return;
+      }
+
+      var dir = "";
+      if (Platform.isIOS) {
+        dir = (await getApplicationDocumentsDirectory()).path;
+      } else {
+        dir = await FilePicker.platform.getDirectoryPath() ?? "";
+      }
+
+      if (dir.isEmpty) {
+        return;
+      }
+      var jsonFile = File(
+        '$dir/SimpleLive_${DateTime.now().millisecondsSinceEpoch ~/ 1000}.json',
+      );
+      var jsonText = generateJson();
+      await jsonFile.writeAsString(jsonText);
+      SmartDialog.showToast("已导出关注列表");
+    } catch (e) {
+      Log.logPrint(e);
+      SmartDialog.showToast("导出失败：$e");
+    }
+  }
+
+  Future<void> inputFile() async {
+    try {
+      var status = await Utils.checkStoragePermission();
+      if (!status) {
+        SmartDialog.showToast("无权限");
+        return;
+      }
+      var file = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      if (file == null || file.files.isEmpty) return;
+
+      var bytes = file.files.single.bytes;
+      if (bytes == null) {
+        SmartDialog.showToast("文件内容为空");
+        return;
+      }
+
+      var jsonString = utf8.decode(bytes);
+      await inputJson(jsonString);
+      SmartDialog.showToast("导入成功");
+    } catch (e) {
+      Log.logPrint(e);
+      SmartDialog.showToast("导入失败:$e");
+    } finally {
+      loadData();
+    }
+  }
+
+  void exportText() {
+    if (followList.isEmpty) {
+      SmartDialog.showToast("列表为空");
+      return;
+    }
+    var content = generateJson();
+    Get.dialog(
+      AlertDialog(
+        title: const Text("导出为文本"),
+        content: TextField(
+          controller: TextEditingController(text: content),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+          minLines: 5,
+          maxLines: 8,
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: const Text("关闭"),
+          ),
+          TextButton(
+            onPressed: () {
+              Utils.copyToClipboard(content);
+              Get.back();
+            },
+            child: const Text("复制"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> inputText() async {
+    final TextEditingController textController = TextEditingController();
+    await Get.dialog(
+      AlertDialog(
+        title: const Text("从文本导入"),
+        content: TextField(
+          controller: textController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: "请输入内容",
+          ),
+          minLines: 5,
+          maxLines: 8,
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: const Text("关闭"),
+          ),
+          TextButton(
+            onPressed: () async {
+              var content = await Utils.getClipboard();
+              if (content != null) {
+                textController.text = content;
+              }
+            },
+            child: const Text("粘贴"),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (textController.text.isEmpty) {
+                SmartDialog.showToast("内容为空");
+                return;
+              }
+              try {
+                await inputJson(textController.text);
+                SmartDialog.showToast("导入成功");
+                Get.back();
+                loadData();
+              } catch (e) {
+                SmartDialog.showToast("导入失败，请检查内容是否正确");
+              }
+            },
+            child: const Text("导入"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String generateJson() {
+    var data = followList
+        .map(
+          (item) => {
+            "siteId": item.siteId,
+            "id": item.id,
+            "roomId": item.roomId,
+            "userName": item.userName,
+            "face": item.face,
+            "watchDuration": item.watchDuration,
+            "addTime": item.addTime.toString(),
+            "tag": item.tag,
+          },
+        )
+        .toList();
+    return jsonEncode(data);
+  }
+
+  Future inputJson(String content) async {
+    var data = jsonDecode(content);
+
+    for (var item in data) {
+      var follow = FollowUser.fromJson(item);
+      // 导入关注列表同时导入标签列表 此方法可优化为所有导入逻辑
+      if (follow.tag != "全部") {
+        // logic: 尝试添加，存在则返回已存在的对象
+        var tag = await DBService.instance.addFollowTag(follow.tag);
+        // 更新tag
+        tag.userId.addIf(!tag.userId.contains(follow.id), follow.id);
+        DBService.instance.updateFollowTag(tag);
+      }
+      await DBService.instance.addFollow(follow);
+    }
+  }
+
+  @override
+  void onClose() {
+    updateTimer?.cancel();
+    subscription?.cancel();
+    super.onClose();
+  }
+}
