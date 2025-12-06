@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:fvp/mdk.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:simple_live_app/app/event_bus.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -23,35 +21,21 @@ import 'package:simple_live_app/app/utils.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'package:simple_live_app/modules/live_room/player/base_player.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
+
 mixin PlayerMixin {
   GlobalKey globalDanmuKey = GlobalKey();
 
   /// 播放器实例
-  late final Player player = Player();
+  late BasePlayer player;
 
   /// 初始化播放器并设置参数
   Future<void> initializePlayer() async {
-    // 设置音频解码器
-    if (AppSettingsController.instance.customPlayerDecoder.value) {
-      player.setDecoders(
-        MediaType.audio,
-        [
-          AppSettingsController.instance.audioDecoder.value,
-        ],
-      );
-    }
-
-    // 设置视频解码器
-    if (AppSettingsController.instance.customPlayerDecoder.value) {
-      player.setDecoders(
-        MediaType.video,
-        [
-          AppSettingsController.instance.videoDecoder.value,
-        ],
-      );
-    }
-
-    player.setDecoders(MediaType.subtitle, []);
+    await player.init();
+    //设置音量
+    player.setVolume(AppSettingsController.instance.playerVolume.value);
   }
 }
 
@@ -391,30 +375,12 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         return;
       }
 
-      Uint8List? rgbaData = await player.snapshot();
-      if (rgbaData == null) {
+      Uint8List? pngBytes = await player.snapshot();
+      if (pngBytes == null) {
         SmartDialog.showToast("截图失败,数据为空");
         SmartDialog.dismiss(status: SmartStatus.loading);
         return;
       }
-
-      final completer = Completer<ui.Image>();
-      ui.decodeImageFromPixels(
-        rgbaData,
-        width.value,
-        height.value,
-        ui.PixelFormat.rgba8888,
-        completer.complete,
-      );
-      final ui.Image image = await completer.future;
-
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) {
-        SmartDialog.showToast("截图转换失败");
-        SmartDialog.dismiss(status: SmartStatus.loading);
-        return;
-      }
-      final pngBytes = byteData.buffer.asUint8List();
 
       if (Platform.isIOS || Platform.isAndroid) {
         await ImageGallerySaverPlus.saveImage(
@@ -700,119 +666,49 @@ class PlayerController extends BaseController
 
   @override
   void onInit() {
+    if (AppSettingsController.instance.playerType.value == 0) {
+      player = LibMPV();
+    } else if (AppSettingsController.instance.playerType.value == 1) {
+      player = LibMDK();
+    }
     initSystem();
-    initStream();
-    //设置音量
-    player.volume = AppSettingsController.instance.playerVolume.value / 100.0;
+    initGlobalListeners();
     super.onInit();
   }
 
   StreamSubscription? _escSubscription;
 
-  void initStream() {
-    int lastBufferProgress = 0;
-
-    player
-      ..onEvent((MediaEvent event) {
-        if (event.error < 0) {
-          errorMsg.value = event.error.toString();
-          Log.d(
-            "播放器错误: ${event.error}, 详情: ${event.category}-${event.detail}",
-          );
-          mediaError(event.error.toString());
-          return;
-        }
-
-        switch (event.category) {
-          case "render.video":
-            if (event.detail == "1st_frame") {
-              Log.d("首帧已渲染");
-            }
-            break;
-
-          case "decoder.audio":
-          case "decoder.video":
-            if (event.detail == "open" && event.error < 0) {
-              Log.d("解码器打开失败: ${event.category}, stream=${event.detail}");
-            } else if (event.error == 0) {
-              Log.d("解码器已打开: ${event.category}, name=${event.detail}");
-              if (event.category == "decoder.video") {
-                videoDecoderName = event.detail;
-              } else {
-                audioDecoderName = event.detail;
-              }
-            }
-            break;
-
-          case "video":
-            if (event.detail != "size") break;
-            Log.d("视频帧大小变化");
-
-            final codec = player.mediaInfo.video?.firstOrNull?.codec;
-            if (codec == null) {
-              Log.d("未获取到视频编码信息");
-              break;
-            }
-
-            width.value = codec.width;
-            height.value = codec.height;
-            isVertical.value = height.value > width.value;
-
-            Log.d(
-              "视频宽: ${codec.width}, 高: ${codec.height}, 帧率: ${codec.frameRate}",
-            );
-
-            if (autoFullScreen) {
-              enterFullScreen();
-            }
-            break;
-
-          case "reader.buffering":
-            final progress = event.error.toInt();
-            if (progress < lastBufferProgress) lastBufferProgress = 0;
-            if (progress - lastBufferProgress >= 20 || progress == 100) {
-              lastBufferProgress = (progress ~/ 20) * 20;
-              Log.d("缓冲进度: $lastBufferProgress%");
-            }
-            break;
-
-          case "thread.audio":
-          case "thread.video":
-            Log.d(
-              "线程事件: ${event.category}, 状态=${event.error == 1 ? "启动" : "退出"}",
-            );
-            break;
-
-          case "snapshot":
-            Log.d(
-              event.error == 0
-                  ? "截图成功: ${event.detail}"
-                  : "截图失败: ${event.detail}",
-            );
-            break;
-
-          case "metadata":
-            Log.d("元数据已更新");
-            break;
-
-          default:
-            Log.d(
-              "未知事件: ${event.category}, 详情: ${event.detail}, 错误码: ${event.error}",
-            );
-            break;
-        }
-      })
-      ..onStateChanged((oldState, newState) {
-        Log.d("播放状态变化: $oldState → $newState");
-        if (newState == PlaybackState.playing) {
-          WakelockPlus.enable();
-        } else {
-          WakelockPlus.disable();
-        }
-      });
-
+  void initGlobalListeners() {
     _escSubscription = EventBus.instance.listen(EventBus.kEscapePressed, (_) {
       exitFull();
+    });
+  }
+
+  void initPlayerListeners() {
+    player.stateStream.listen((state) {
+      // Handle state changes
+      if (state.playbackState == PlaybackState.playing) {
+        WakelockPlus.enable();
+      } else {
+        WakelockPlus.disable();
+      }
+
+      // Handle video size changes
+      if (state.videoSize != Size.zero &&
+          (state.videoSize.width != width.value ||
+              state.videoSize.height != height.value)) {
+        width.value = state.videoSize.width.toInt();
+        height.value = state.videoSize.height.toInt();
+        isVertical.value = height.value > width.value;
+
+        Log.d(
+          "视频宽: ${width.value}, 高: ${height.value}",
+        );
+
+        if (autoFullScreen) {
+          enterFullScreen();
+        }
+      }
     });
   }
 
@@ -830,7 +726,7 @@ class PlayerController extends BaseController
   }
 
   void showDebugInfo() {
-    final mediaInfo = player.mediaInfo;
+    final mediaInfo = player.lastState.mediaInfo;
     Utils.showBottomSheet(
       title: "播放信息",
       child: ListView(

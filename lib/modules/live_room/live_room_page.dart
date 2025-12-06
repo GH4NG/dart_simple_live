@@ -290,7 +290,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
               displayHeight = (videoH * scale).clamp(0, maxHeight);
               break;
             case 3: // 16:9
-              boxFit = BoxFit.none;
+              boxFit = BoxFit.fill;
               const targetAspect = 16 / 9;
               if (parentAspect > targetAspect) {
                 displayHeight = maxHeight;
@@ -301,7 +301,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
               }
               break;
             case 4: // 4:3
-              boxFit = BoxFit.none;
+              boxFit = BoxFit.fill;
               const targetAspect = 4 / 3;
               if (parentAspect > targetAspect) {
                 displayHeight = maxHeight;
@@ -312,45 +312,18 @@ class LiveRoomPage extends GetView<LiveRoomController> {
               }
               break;
           }
-          Widget buildVideo(int id) {
-            if (scaleMode == 3 || scaleMode == 4) {
-              return SizedBox(
-                width: displayWidth,
-                height: displayHeight,
-                child: Texture(
-                  textureId: id,
-                  filterQuality: FilterQuality.medium,
-                ),
-              );
-            } else {
-              return SizedBox(
-                width: displayWidth,
-                height: displayHeight,
-                child: FittedBox(
-                  fit: boxFit,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: videoW,
-                    height: videoH,
-                    child: Texture(
-                      textureId: id,
-                      filterQuality: FilterQuality.medium,
-                    ),
-                  ),
-                ),
-              );
-            }
-          }
 
           return Stack(
             children: [
               Container(color: Colors.black),
               Center(
-                child: ValueListenableBuilder<int?>(
-                  valueListenable: controller.player.textureId,
-                  builder: (_, id, _) => id == null
-                      ? const CircularProgressIndicator()
-                      : buildVideo(id),
+                child: SizedBox(
+                  width: displayWidth,
+                  height: displayHeight,
+                  child: controller.player.videoWidget(
+                    UniqueKey(),
+                    fit: boxFit,
+                  ),
                 ),
               ),
               playerControls(context, controller),

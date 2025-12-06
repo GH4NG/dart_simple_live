@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:fvp/mdk.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:simple_live_app/app/app_style.dart';
 import 'package:simple_live_app/app/constant.dart';
@@ -19,6 +18,7 @@ import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/models/db/follow_user.dart';
 import 'package:simple_live_app/models/db/history.dart';
 import 'package:simple_live_app/modules/live_room/player/player_controller.dart';
+import 'package:simple_live_app/modules/live_room/player/base_player.dart';
 import 'package:simple_live_app/modules/settings/danmu_settings_page.dart';
 import 'package:simple_live_app/services/db_service.dart';
 import 'package:simple_live_app/services/follow_service.dart';
@@ -422,10 +422,10 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   Future<void> setPlayer() async {
     // 初始化播放器
     await initializePlayer();
+    initPlayerListeners();
 
-    if (player.state == PlaybackState.playing) {
-      player.state = PlaybackState.stopped;
-      player.waitFor(PlaybackState.stopped);
+    if (player.lastState.playbackState == PlaybackState.playing) {
+      await player.stop();
     }
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     errorMsg.value = "";
@@ -435,20 +435,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       playurl = playurl.replaceAll("http://", "https://");
     }
 
-    if (playHeaders != null && playHeaders!.isNotEmpty) {
-      final headers = playHeaders!.entries
-          .map((e) => "${e.key}: ${e.value}")
-          .join("\r\n");
-      player.setProperty("avio.headers", headers);
-    }
-
-    player.media = playurl;
-    player
-      ..prepare()
-      ..state = PlaybackState.playing;
-    if (player.textureId.value == null) {
-      player.updateTexture();
-    }
+    await player.loadVideo(playurl, headers: playHeaders);
 
     Log.d("播放链接\r\n：$playurl");
   }
@@ -662,7 +649,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
                 max: 100,
                 value: AppSettingsController.instance.playerVolume.value,
                 onChanged: (newValue) {
-                  player.volume = newValue / 100;
+                  player.setVolume(newValue);
                   AppSettingsController.instance.setPlayerVolume(newValue);
                 },
               ),
@@ -1015,8 +1002,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     liveDanmaku = site.liveSite.getDanmaku();
 
     // 停止播放
-    player.state = PlaybackState.stopped;
-    player.waitFor(PlaybackState.stopped);
+    await player.stop();
 
     // 刷新信息
     loadData();

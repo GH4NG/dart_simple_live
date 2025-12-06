@@ -7,6 +7,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
   flutter_inappwebview_windows
   fvp
+  media_kit_libs_windows_video
+  media_kit_video
   permission_handler_windows
   screen_brightness_windows
   screen_retriever_windows
