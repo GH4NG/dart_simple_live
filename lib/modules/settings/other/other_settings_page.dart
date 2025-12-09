@@ -8,6 +8,7 @@ import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/modules/settings/other/other_settings_controller.dart';
 import 'package:simple_live_app/widgets/settings/settings_card.dart';
+import 'package:simple_live_app/widgets/settings/settings_menu.dart';
 import 'package:simple_live_app/widgets/settings/settings_switch.dart';
 
 class OtherSettingsPage extends GetView<OtherSettingsController> {
@@ -68,6 +69,27 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                     title: "开启日志记录",
                     subtitle: "开启后将记录调试日志，可以将日志文件提供给开发者用于排查问题",
                     onChanged: controller.setLogEnable,
+                  ),
+                ),
+                Obx(
+                  () => SettingsSwitch(
+                    value: AppSettingsController.instance.playerLogEnable.value,
+                    title: "开启播放器日志",
+                    subtitle: "开启后将记录播放器内核日志",
+                    onChanged: controller.setPlayerLogEnable,
+                  ),
+                ),
+                Obx(
+                  () => Visibility(
+                    visible:
+                        AppSettingsController.instance.playerLogEnable.value,
+                    child: SettingsMenu<int>(
+                      title: "播放器日志等级",
+                      value:
+                          AppSettingsController.instance.playerLogLevel.value,
+                      valueMap: AppSettingsController.playerLogLevelMap,
+                      onChanged: controller.setPlayerLogLevel,
+                    ),
                   ),
                 ),
               ],

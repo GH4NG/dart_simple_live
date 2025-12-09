@@ -33,12 +33,13 @@ class LibMPV extends BasePlayer {
     }
 
     register();
+
     _player = mpv.Player(
       configuration: mpv.PlayerConfiguration(
         title: "Simple Live Player",
-        logLevel: AppSettingsController.instance.logEnable.value
-            ? mpv.MPVLogLevel.info
-            : mpv.MPVLogLevel.error,
+        logLevel: mpv
+            .MPVLogLevel
+            .values[AppSettingsController.instance.playerLogLevel.value],
       ),
     );
     _controller = VideoController(
@@ -62,16 +63,7 @@ class LibMPV extends BasePlayer {
             ),
     );
 
-    _player!.stream.playing.listen((_) => _updateState());
-    _player!.stream.completed.listen((_) => _updateState());
-    _player!.stream.tracks.listen((_) => _updateState());
-    _player!.stream.width.listen((_) => _updateState());
-    _player!.stream.height.listen((_) => _updateState());
-    _player!.stream.buffering.listen((_) => _updateState());
-
-    _player!.stream.error.listen((event) {
-      Log.w('MPV error: $event');
-    });
+    setupPlayerDebugInfoSubscription();
   }
 
   @override
@@ -120,8 +112,6 @@ class LibMPV extends BasePlayer {
     await _player?.stop();
 
     await _player?.open(mpv.Media(url, httpHeaders: headers), play: play);
-
-    _updateState();
   }
 
   @override
@@ -142,7 +132,6 @@ class LibMPV extends BasePlayer {
   @override
   Future<void> stop() async {
     await _player?.stop();
-    _updateState();
   }
 
   @override
@@ -155,72 +144,34 @@ class LibMPV extends BasePlayer {
     return await _player?.screenshot();
   }
 
-  void _updateState() {
-    if (_player == null) return;
-    final playing = _player!.state.playing;
-    final completed = _player!.state.completed;
-    PlaybackState state;
-    if (completed) {
-      state = PlaybackState.stopped;
-    } else if (playing) {
-      state = PlaybackState.playing;
-    } else {
-      state = PlaybackState.paused;
+  StreamSubscription<mpv.PlayerLog>? playerLogSubscription;
+  StreamSubscription<int?>? playerWidthSubscription;
+  StreamSubscription<int?>? playerHeightSubscription;
+  StreamSubscription<mpv.VideoParams>? playerVideoParamsSubscription;
+  StreamSubscription<mpv.AudioParams>? playerAudioParamsSubscription;
+  StreamSubscription<mpv.Playlist>? playerPlaylistSubscription;
+  StreamSubscription<mpv.Track>? playerTracksSubscription;
+  StreamSubscription<double?>? playerAudioBitrateSubscription;
+
+  Future<void> setupPlayerDebugInfoSubscription() async {
+    await playerLogSubscription?.cancel();
+    if (AppSettingsController.instance.playerLogEnable.value) {
+      playerLogSubscription = _player!.stream.log.listen((event) {
+        if (AppSettingsController.instance.playerLogEnable.value) {
+          Log.d("MPV: ${event.toString()}");
+        }
+      });
     }
+  }
 
-    // Filter video tracks to only those with valid dimensions
-    final videoTracks = _player!.state.tracks.video
-        .where((e) => (e.w ?? 0) > 0 && (e.h ?? 0) > 0)
-        .map(
-          (e) => MediaStream(
-            index: int.tryParse(e.id) ?? 0,
-            codec: MediaCodec(
-              codec: e.title ?? e.id,
-              format: e.language ?? '',
-              width: e.w ?? 0,
-              height: e.h ?? 0,
-              frameRate: e.fps ?? 0,
-            ),
-          ),
-        )
-        .toList();
-
-    // Map audio tracks
-    final audioTracks = _player!.state.tracks.audio
-        .map(
-          (e) => MediaStream(
-            index: int.tryParse(e.id) ?? 0,
-            codec: MediaCodec(
-              codec: e.title ?? e.id,
-              format: e.language ?? '',
-              frameRate: e.bitrate?.toDouble() ?? 0,
-            ),
-          ),
-        )
-        .toList();
-
-    final newState = PlayerState(
-      playbackState: state,
-      mediaInfo: MediaInfo(
-        duration: _player!.state.duration.inMilliseconds,
-        streams: videoTracks.length + audioTracks.length,
-        video: videoTracks,
-        audio: audioTracks,
-        metadata: {
-          'vo': AppSettingsController.instance.videoOutputDriver.value,
-          'ao': AppSettingsController.instance.audioOutputDriver.value,
-          'hwdec': AppSettingsController.instance.videoHardwareDecoder.value,
-          'videoParams': _player!.state.videoParams.toString(),
-          'audioParams': _player!.state.audioParams.toString(),
-        },
-      ),
-      videoSize: Size(
-        _player!.state.width?.toDouble() ?? 0,
-        _player!.state.height?.toDouble() ?? 0,
-      ),
-      buffering: _player!.state.buffering,
-    );
-    lastState = newState;
-    _stateController.add(newState);
+  Future<void> cancelPlayerDebugInfoSubscription() async {
+    await playerLogSubscription?.cancel();
+    await playerWidthSubscription?.cancel();
+    await playerHeightSubscription?.cancel();
+    await playerVideoParamsSubscription?.cancel();
+    await playerAudioParamsSubscription?.cancel();
+    await playerPlaylistSubscription?.cancel();
+    await playerTracksSubscription?.cancel();
+    await playerAudioBitrateSubscription?.cancel();
   }
 }

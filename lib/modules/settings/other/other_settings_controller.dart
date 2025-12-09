@@ -33,6 +33,14 @@ class OtherSettingsController extends BaseController {
     }
   }
 
+  void setPlayerLogEnable(dynamic e) {
+    AppSettingsController.instance.setPlayerLogEnable(e);
+  }
+
+  void setPlayerLogLevel(dynamic e) {
+    AppSettingsController.instance.setPlayerLogLevel(e);
+  }
+
   Future<void> loadLogFiles() async {
     var supportDir = await getApplicationSupportDirectory();
     var logDir = Directory("${supportDir.path}/log");

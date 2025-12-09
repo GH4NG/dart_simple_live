@@ -138,6 +138,12 @@ class LocalStorageService extends GetxService {
   /// 日志记录
   static const String kLogEnable = "LogEnable";
 
+  /// 开启播放器日志记录
+  static const String kPlayerLogEnable = "PlayerLogEnable";
+
+  /// 播放器日志等级
+  static const String kPlayerLogLevel = "PlayerLogLevel";
+
   /// 开启自定义播放器视频输出
   static const String kCustomPlayerOutput = "CustomPlayerOutput";
 
