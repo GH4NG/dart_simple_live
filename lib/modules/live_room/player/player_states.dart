@@ -65,12 +65,14 @@ class PlayerState {
   final MediaInfo mediaInfo;
   final Size videoSize;
   final int? textureId;
+  final bool buffering;
 
   PlayerState({
     this.playbackState = PlaybackState.stopped,
     MediaInfo? mediaInfo,
     this.videoSize = Size.zero,
     this.textureId,
+    this.buffering = false,
   }) : mediaInfo = mediaInfo ?? MediaInfo();
 
   PlayerState copyWith({
@@ -78,12 +80,14 @@ class PlayerState {
     MediaInfo? mediaInfo,
     Size? videoSize,
     int? textureId,
+    bool? buffering,
   }) {
     return PlayerState(
       playbackState: playbackState ?? this.playbackState,
       mediaInfo: mediaInfo ?? this.mediaInfo,
       videoSize: videoSize ?? this.videoSize,
       textureId: textureId ?? this.textureId,
+      buffering: buffering ?? this.buffering,
     );
   }
 }

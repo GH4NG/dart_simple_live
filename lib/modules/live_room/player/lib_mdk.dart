@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
+import 'package:simple_live_app/modules/live_room/live_room_controller.dart';
+import 'package:simple_live_app/modules/live_room/player/player_controls.dart';
 import 'package:fvp/mdk.dart' as mdk;
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
@@ -31,6 +34,11 @@ class LibMDK extends BasePlayer {
 
   @override
   Future<void> init() async {
+    if (_player != null) {
+      _player?.dispose();
+      _player = null;
+    }
+
     register();
     _player = mdk.Player();
     _player!.onStateChanged((oldState, newState) {
@@ -41,60 +49,45 @@ class LibMDK extends BasePlayer {
     });
   }
 
-  void _updateState() {
-    if (_player == null) return;
-    final info = _player!.mediaInfo;
-    final newState = PlayerState(
-      playbackState: _mapState(_player!.state),
-      mediaInfo: MediaInfo(
-        duration: info.duration,
-        bitRate: info.bitRate,
-        format: info.format ?? '',
-        streams: info.streams,
-        video: info.video
-            ?.map(
-              (v) => MediaStream(
-                index: v.index,
-                codec: MediaCodec(
-                  codec: v.codec.codec,
-                  width: v.codec.width,
-                  height: v.codec.height,
-                  frameRate: v.codec.frameRate,
-                  format: v.codec.format.toString(),
+  @override
+  Widget? videoWidget(
+    Key key,
+    double? aspectRatio,
+    BoxFit fit,
+  ) {
+    return ValueListenableBuilder<int?>(
+      key: key,
+      valueListenable: _textureId,
+      builder: (context, id, _) {
+        if (id == null || id < 0) {
+          return const SizedBox.expand();
+        }
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final size = lastState.videoSize;
+            if (size == Size.zero) {
+              return const SizedBox.expand();
+            }
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: FittedBox(
+                    fit: fit,
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: Texture(textureId: id),
+                    ),
+                  ),
                 ),
-              ),
-            )
-            .toList(),
-        audio: info.audio
-            ?.map(
-              (a) => MediaStream(
-                index: a.index,
-                codec: MediaCodec(
-                  codec: a.codec.codec,
-                  width: 0,
-                  height: 0,
-                  frameRate: a.codec.frameRate.toDouble(),
-                  format: '',
-                ),
-              ),
-            )
-            .toList(),
-        metadata: info.metadata,
-      ),
-      videoSize: _getVideoSize(),
-      textureId: _textureId.value,
+                playerControls(context, Get.find<LiveRoomController>()),
+              ],
+            );
+          },
+        );
+      },
     );
-    lastState = newState;
-    _stateController.add(newState);
-  }
-
-  Size _getVideoSize() {
-    if (_player == null) return Size.zero;
-    final codec = _player!.mediaInfo.video?.firstOrNull?.codec;
-    if (codec != null) {
-      return Size(codec.width.toDouble(), codec.height.toDouble());
-    }
-    return Size.zero;
   }
 
   @override
@@ -167,24 +160,8 @@ class LibMDK extends BasePlayer {
   }
 
   @override
-  Future<void> pause() async {
-    _player?.state = mdk.PlaybackState.paused;
-  }
-
-  @override
   Future<void> play() async {
     _player?.state = mdk.PlaybackState.playing;
-  }
-
-  @override
-  Future<void> playOrPause() async {
-    final player = _player;
-    if (player == null) return;
-    if (player.state == mdk.PlaybackState.playing) {
-      await pause();
-    } else {
-      await play();
-    }
   }
 
   @override
@@ -196,22 +173,25 @@ class LibMDK extends BasePlayer {
   }
 
   @override
+  Future<void> pause() async {
+    _player?.state = mdk.PlaybackState.paused;
+  }
+
+  @override
   Future<void> stop() async {
     _player?.state = mdk.PlaybackState.stopped;
     _textureId.value = null;
     _updateState();
   }
 
-  PlaybackState _mapState(mdk.PlaybackState state) {
-    switch (state) {
-      case mdk.PlaybackState.stopped:
-        return PlaybackState.stopped;
-      case mdk.PlaybackState.playing:
-        return PlaybackState.playing;
-      case mdk.PlaybackState.paused:
-        return PlaybackState.paused;
-      default:
-        return PlaybackState.stopped;
+  @override
+  Future<void> playOrPause() async {
+    final player = _player;
+    if (player == null) return;
+    if (player.state == mdk.PlaybackState.playing) {
+      await pause();
+    } else {
+      await play();
     }
   }
 
@@ -242,33 +222,72 @@ class LibMDK extends BasePlayer {
     return byteData?.buffer.asUint8List();
   }
 
-  @override
-  Widget? videoWidget(Key key, {BoxFit fit = BoxFit.contain}) {
-    return ValueListenableBuilder<int?>(
-      key: key,
-      valueListenable: _textureId,
-      builder: (context, id, _) {
-        if (id == null || id < 0) {
-          return const SizedBox.expand();
-        }
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final size = lastState.videoSize;
-            if (size == Size.zero) {
-              return const SizedBox.expand();
-            }
-            return FittedBox(
-              fit: fit,
-              alignment: Alignment.center,
-              child: SizedBox(
-                width: size.width,
-                height: size.height,
-                child: Texture(textureId: id),
+  void _updateState() {
+    if (_player == null) return;
+    final info = _player!.mediaInfo;
+    final newState = PlayerState(
+      playbackState: _mapState(_player!.state),
+      mediaInfo: MediaInfo(
+        duration: info.duration,
+        bitRate: info.bitRate,
+        format: info.format ?? '',
+        streams: info.streams,
+        video: info.video
+            ?.map(
+              (v) => MediaStream(
+                index: v.index,
+                codec: MediaCodec(
+                  codec: v.codec.codec,
+                  width: v.codec.width,
+                  height: v.codec.height,
+                  frameRate: v.codec.frameRate,
+                  format: v.codec.format.toString(),
+                ),
               ),
-            );
-          },
-        );
-      },
+            )
+            .toList(),
+        audio: info.audio
+            ?.map(
+              (a) => MediaStream(
+                index: a.index,
+                codec: MediaCodec(
+                  codec: a.codec.codec,
+                  width: 0,
+                  height: 0,
+                  frameRate: a.codec.frameRate.toDouble(),
+                  format: '',
+                ),
+              ),
+            )
+            .toList(),
+        metadata: info.metadata,
+      ),
+      videoSize: _getVideoSize(),
+      textureId: _textureId.value,
     );
+    lastState = newState;
+    _stateController.add(newState);
+  }
+
+  Size _getVideoSize() {
+    if (_player == null) return Size.zero;
+    final codec = _player!.mediaInfo.video?.firstOrNull?.codec;
+    if (codec != null) {
+      return Size(codec.width.toDouble(), codec.height.toDouble());
+    }
+    return Size.zero;
+  }
+
+  PlaybackState _mapState(mdk.PlaybackState state) {
+    switch (state) {
+      case mdk.PlaybackState.stopped:
+        return PlaybackState.stopped;
+      case mdk.PlaybackState.playing:
+        return PlaybackState.playing;
+      case mdk.PlaybackState.paused:
+        return PlaybackState.paused;
+      default:
+        return PlaybackState.stopped;
+    }
   }
 }

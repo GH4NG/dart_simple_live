@@ -14,9 +14,10 @@ abstract class BasePlayer {
   Future<void> init();
 
   Widget? videoWidget(
-    Key key, {
-    BoxFit fit = BoxFit.contain,
-  });
+    Key key,
+    double? aspectRatio,
+    BoxFit fit,
+  );
 
   Future<void> dispose();
 

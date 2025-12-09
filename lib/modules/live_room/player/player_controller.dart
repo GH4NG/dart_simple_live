@@ -26,14 +26,20 @@ import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
 import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
 
 mixin PlayerMixin {
+  GlobalKey globalPlayerKey = GlobalKey();
   GlobalKey globalDanmuKey = GlobalKey();
 
   /// 播放器实例
   late BasePlayer player;
 
+  /// 播放器是否初始化完成
+  RxBool isPlayerInitialized = false.obs;
+
   /// 初始化播放器并设置参数
   Future<void> initializePlayer() async {
+    isPlayerInitialized.value = false;
     await player.init();
+    isPlayerInitialized.value = true;
     //设置音量
     player.setVolume(AppSettingsController.instance.playerVolume.value);
   }
@@ -164,7 +170,7 @@ mixin PlayerStateMixin on PlayerMixin {
 
 mixin PlayerDanmakuMixin on PlayerStateMixin {
   /// 弹幕控制器
-  late DanmakuController? danmakuController;
+  DanmakuController? danmakuController;
 
   void initDanmakuController(DanmakuController e) {
     danmakuController = e;
@@ -731,22 +737,26 @@ class PlayerController extends BaseController
       title: "播放信息",
       child: ListView(
         children: [
-          ListTile(
-            title: const Text("解码器信息"),
-            subtitle: Text(
-              '视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-              '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}',
-            ),
-            onLongPress: () {
-              Clipboard.setData(
-                ClipboardData(
-                  text:
-                      '解码器信息\n视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-                      '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}',
-                ),
-              );
-            },
-          ),
+          // ListTile(
+          //   title: const Text("解码器信息"),
+          //   subtitle: Text(
+          //     '视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
+          //     '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}'
+          //     '${mediaInfo.metadata.containsKey('vo') ? "\nVO: ${mediaInfo.metadata['vo']}" : ""}'
+          //     '${mediaInfo.metadata.containsKey('hwdec') ? "\nHWDEC: ${mediaInfo.metadata['hwdec']}" : ""}',
+          //   ),
+          //   onLongPress: () {
+          //     Clipboard.setData(
+          //       ClipboardData(
+          //         text:
+          //             '解码器信息\n视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
+          //             '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}'
+          //             '${mediaInfo.metadata.containsKey('vo') ? "\nVO: ${mediaInfo.metadata['vo']}" : ""}'
+          //             '${mediaInfo.metadata.containsKey('hwdec') ? "\nHWDEC: ${mediaInfo.metadata['hwdec']}" : ""}',
+          //       ),
+          //     );
+          //   },
+          // ),
           ListTile(
             title: const Text("分辨率"),
             subtitle: Text(
@@ -838,7 +848,6 @@ class PlayerController extends BaseController
 
   @override
   Future<void> onClose() async {
-    Log.w("播放器关闭");
     if (smallWindowState.value) {
       exitSmallWindow();
     }

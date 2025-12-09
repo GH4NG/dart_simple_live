@@ -18,6 +18,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:simple_live_app/widgets/superchat_card.dart';
 import 'dart:async';
 import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_app/modules/live_room/player/player_states.dart';
 
 Widget playerControls(BuildContext context, LiveRoomController controller) {
   return Stack(
@@ -29,6 +30,19 @@ Widget playerControls(BuildContext context, LiveRoomController controller) {
         return buildControls(context, controller);
       }),
       buildDanmuView(context, controller),
+      Center(
+        child: // 中间
+        StreamBuilder<PlayerState>(
+          stream: controller.player.stateStream,
+          initialData: controller.player.lastState,
+          builder: (_, snapshot) => Visibility(
+            visible: snapshot.data?.buffering ?? false,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      ),
       // 左下角SC显示
       Obx(
         () => Visibility(
@@ -166,7 +180,7 @@ Widget buildFullControls(BuildContext context, LiveRoomController controller) {
                     ),
                   ),
                   Visibility(
-                    visible: Platform.isAndroid || Platform.isIOS,
+                    visible: Platform.isAndroid,
                     child: IconButton(
                       onPressed: () {
                         controller.enablePIP();
