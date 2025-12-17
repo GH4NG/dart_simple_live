@@ -311,11 +311,11 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
       var videoHeight = height.value;
 
       // 横屏还是竖屏
-      if (videoHeight > videoWidth) {
-        var aspectRatio = videoWidth / videoHeight;
+      if (height! > width!) {
+        var aspectRatio = width / height;
         windowManager.setSize(Size(400, 400 / aspectRatio));
       } else {
-        var aspectRatio = videoHeight / videoWidth;
+        var aspectRatio = height / width;
         windowManager.setSize(Size(280 / aspectRatio, 280));
       }
 
@@ -439,10 +439,10 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
     showControlsState.value = false;
 
     //监听事件
-    var videoWidth = width.value;
-    var videoHeight = height.value;
+    var width = player.lastState.width;
+    var height = player.lastState.height;
     Rational ratio = const Rational.landscape();
-    if (videoHeight > videoWidth) {
+    if (height! > width!) {
       ratio = const Rational.vertical();
     } else {
       ratio = const Rational.landscape();
@@ -667,9 +667,6 @@ class PlayerController extends BaseController
         PlayerDanmakuMixin,
         PlayerSystemMixin,
         PlayerGestureControlMixin {
-  String videoDecoderName = "";
-  String audioDecoderName = "";
-
   @override
   void onInit() {
     if (AppSettingsController.instance.playerType.value == 0) {
@@ -682,165 +679,86 @@ class PlayerController extends BaseController
     super.onInit();
   }
 
-  StreamSubscription? _escSubscription;
-
-  void initGlobalListeners() {
-    _escSubscription = EventBus.instance.listen(EventBus.kEscapePressed, (_) {
-      exitFull();
-    });
-  }
-
-  void initPlayerListeners() {
-    player.stateStream.listen((state) {
-      // Handle state changes
-      if (state.playbackState == PlaybackState.playing) {
-        WakelockPlus.enable();
-      } else {
-        WakelockPlus.disable();
-      }
-
-      // Handle video size changes
-      if (state.videoSize != Size.zero &&
-          (state.videoSize.width != width.value ||
-              state.videoSize.height != height.value)) {
-        width.value = state.videoSize.width.toInt();
-        height.value = state.videoSize.height.toInt();
-        isVertical.value = height.value > width.value;
-
-        Log.d(
-          "视频宽: ${width.value}, 高: ${height.value}",
-        );
-
-        if (autoFullScreen) {
-          enterFullScreen();
-        }
-      }
-    });
-  }
+  StreamSubscription<PlayerState>? _stateSubscription;
 
   void disposeStream() {
     _pipSubscription?.cancel();
-    _escSubscription?.cancel();
-  }
-
-  void mediaEnd() {
-    WakelockPlus.disable();
-  }
-
-  void mediaError(String error) {
-    WakelockPlus.disable();
   }
 
   void showDebugInfo() {
-    final mediaInfo = player.lastState.mediaInfo;
     Utils.showBottomSheet(
       title: "播放信息",
       child: ListView(
         children: [
-          // ListTile(
-          //   title: const Text("解码器信息"),
-          //   subtitle: Text(
-          //     '视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-          //     '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}'
-          //     '${mediaInfo.metadata.containsKey('vo') ? "\nVO: ${mediaInfo.metadata['vo']}" : ""}'
-          //     '${mediaInfo.metadata.containsKey('hwdec') ? "\nHWDEC: ${mediaInfo.metadata['hwdec']}" : ""}',
-          //   ),
-          //   onLongPress: () {
-          //     Clipboard.setData(
-          //       ClipboardData(
-          //         text:
-          //             '解码器信息\n视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-          //             '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}'
-          //             '${mediaInfo.metadata.containsKey('vo') ? "\nVO: ${mediaInfo.metadata['vo']}" : ""}'
-          //             '${mediaInfo.metadata.containsKey('hwdec') ? "\nHWDEC: ${mediaInfo.metadata['hwdec']}" : ""}',
-          //       ),
-          //     );
-          //   },
-          // ),
           ListTile(
-            title: const Text("分辨率"),
+            title: const Text("Source"),
             subtitle: Text(
-              '${width.value}x${height.value} ${mediaInfo.video?[0].codec.frameRate}FPS',
+              player.lastState.playlist.first,
+            ),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(text: player.lastState.playlist.first),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("Resolution"),
+            subtitle: Text(
+              '${player.lastState.width!}x${player.lastState.height!} @ ${player.lastState.fps!}fps',
             ),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
                   text:
-                      '分辨率\n${width.value}x${height.value} ${mediaInfo.video?[0].codec.frameRate}FPS',
+                      '${player.lastState.width!}x${player.lastState.height!} @ ${player.lastState.fps!}fps',
                 ),
               );
             },
           ),
           ListTile(
-            title: const Text("媒体信息"),
-            subtitle: Text(
-              '时长: ${mediaInfo.duration} ms\n'
-              '码率: ${mediaInfo.bitRate}\n'
-              '格式: ${mediaInfo.format}\n'
-              '流数量: ${mediaInfo.streams}',
-            ),
+            title: const Text("VideoParams"),
+            subtitle: Text(player.lastState.videoParams),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
-                  text:
-                      '媒体信息\n时长: ${mediaInfo.duration} ms\n码率: ${mediaInfo.bitRate}\n格式: ${mediaInfo.format}\n流数量: ${mediaInfo.streams}',
+                  text: "VideoParams\n${player.lastState.videoParams}",
                 ),
               );
             },
           ),
-          // 视频轨道
-          if (mediaInfo.video != null)
-            ...mediaInfo.video!.map(
-              (v) => ListTile(
-                title: Text("视频轨道 #${v.index}"),
-                subtitle: Text(
-                  v.toString(),
+          ListTile(
+            title: const Text("AudioParams"),
+            subtitle: Text(player.lastState.audioParams),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(
+                  text: "AudioParams\n${player.lastState.audioParams}",
                 ),
-                onLongPress: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: "视频轨道 #${v.index}\n${v.toString()}",
-                    ),
-                  );
-                },
-              ),
-            ),
-          // 音频轨道
-          if (mediaInfo.audio != null)
-            ...mediaInfo.audio!.map(
-              (a) => ListTile(
-                title: Text("音频轨道 #${a.index}"),
-                subtitle: Text(
-                  a.toString(),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("VideoTrack"),
+            subtitle: Text(player.lastState.videoTrack),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(
+                  text: "VideoTrack\n${player.lastState.videoTrack}",
                 ),
-                onLongPress: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: "音频轨道 #${a.index}\n${a.toString()}",
-                    ),
-                  );
-                },
-              ),
-            ),
-
-          // Metadata
-          if (mediaInfo.metadata.isNotEmpty)
-            ListTile(
-              title: const Text("元数据"),
-              subtitle: Text(
-                mediaInfo.metadata.entries
-                    .map((e) => "${e.key}: ${e.value}")
-                    .join("\n"),
-              ),
-              onLongPress: () {
-                Clipboard.setData(
-                  ClipboardData(
-                    text:
-                        "元数据\n${mediaInfo.metadata.entries.map((e) => "${e.key}: ${e.value}").join("\n")}",
-                  ),
-                );
-              },
-            ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("AudioTrack"),
+            subtitle: Text(player.lastState.audioTrack),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(
+                  text: "AudioTrack\n${player.lastState.audioTrack}",
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -854,7 +772,7 @@ class PlayerController extends BaseController
     disposeStream();
     disposeDanmakuController();
     await resetSystem();
-    player.dispose();
+    await player.dispose();
     super.onClose();
   }
 }

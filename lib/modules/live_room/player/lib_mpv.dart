@@ -27,6 +27,7 @@ class LibMPV extends BasePlayer {
   @override
   Future<void> init() async {
     if (_player != null) {
+      await cancelPlayerDebugInfoSubscription();
       await _player?.dispose();
       _player = null;
       _controller = null;
@@ -42,25 +43,17 @@ class LibMPV extends BasePlayer {
             .values[AppSettingsController.instance.playerLogLevel.value],
       ),
     );
+
+    var hAenable = AppSettingsController.instance.hardwareDecode.value;
+    var hardwareDecoder =
+        AppSettingsController.instance.videoHardwareDecoder.value;
     _controller = VideoController(
       _player!,
-      configuration: AppSettingsController.instance.customPlayerOutput.value
-          ? VideoControllerConfiguration(
-              vo: AppSettingsController.instance.videoOutputDriver.value,
-              hwdec: AppSettingsController.instance.hardwareDecode.value
-                  ? 'auto'
-                  : 'no',
-            )
-          : AppSettingsController.instance.playerCompatMode.value
-          ? const VideoControllerConfiguration(
-              vo: 'mediacodec_embed',
-              hwdec: 'mediacodec',
-            )
-          : VideoControllerConfiguration(
-              enableHardwareAcceleration:
-                  AppSettingsController.instance.hardwareDecode.value,
-              androidAttachSurfaceAfterVideoParameters: false,
-            ),
+      configuration: VideoControllerConfiguration(
+        enableHardwareAcceleration: hAenable,
+        hwdec: hAenable ? hardwareDecoder : 'no',
+        androidAttachSurfaceAfterVideoParameters: false,
+      ),
     );
 
     setupPlayerDebugInfoSubscription();
@@ -77,7 +70,7 @@ class LibMPV extends BasePlayer {
     }
     final roomController = Get.find<LiveRoomController>();
     return Video(
-      key: roomController.globalPlayerKey,
+      key: UniqueKey(),
       controller: _controller!,
       pauseUponEnteringBackgroundMode:
           AppSettingsController.instance.playerAutoPause.value,
@@ -93,6 +86,7 @@ class LibMPV extends BasePlayer {
 
   @override
   Future<void> dispose() async {
+    await cancelPlayerDebugInfoSubscription();
     await _player?.dispose();
     _player = null;
     _controller = null;
@@ -110,6 +104,9 @@ class LibMPV extends BasePlayer {
   }) async {
     if (_player == null) return;
     await _player?.stop();
+
+    lastState = lastState.copyWith(buffering: true);
+    _stateController.add(lastState);
 
     await _player?.open(mpv.Media(url, httpHeaders: headers), play: play);
   }
@@ -147,31 +144,77 @@ class LibMPV extends BasePlayer {
   StreamSubscription<mpv.PlayerLog>? playerLogSubscription;
   StreamSubscription<int?>? playerWidthSubscription;
   StreamSubscription<int?>? playerHeightSubscription;
+  StreamSubscription<bool>? playerBufferingSubscription;
   StreamSubscription<mpv.VideoParams>? playerVideoParamsSubscription;
   StreamSubscription<mpv.AudioParams>? playerAudioParamsSubscription;
   StreamSubscription<mpv.Playlist>? playerPlaylistSubscription;
-  StreamSubscription<mpv.Track>? playerTracksSubscription;
-  StreamSubscription<double?>? playerAudioBitrateSubscription;
+  StreamSubscription<mpv.Tracks>? playerTracksSubscription;
 
   Future<void> setupPlayerDebugInfoSubscription() async {
     await playerLogSubscription?.cancel();
     if (AppSettingsController.instance.playerLogEnable.value) {
       playerLogSubscription = _player!.stream.log.listen((event) {
-        if (AppSettingsController.instance.playerLogEnable.value) {
-          Log.d("MPV: ${event.toString()}");
-        }
+        Log.d("MPV: ${event.toString()}");
       });
     }
+    await playerWidthSubscription?.cancel();
+    playerWidthSubscription = _player!.stream.width.listen((event) {
+      lastState = lastState.copyWith(width: event ?? 0);
+    });
+    await playerHeightSubscription?.cancel();
+    playerHeightSubscription = _player!.stream.height.listen((event) {
+      lastState = lastState.copyWith(height: event ?? 0);
+    });
+    await playerBufferingSubscription?.cancel();
+    playerBufferingSubscription = _player!.stream.buffering.listen((event) {
+      lastState = lastState.copyWith(buffering: event);
+      _stateController.add(lastState);
+    });
+
+    await playerVideoParamsSubscription?.cancel();
+    playerVideoParamsSubscription = _player!.stream.videoParams.listen((event) {
+      lastState = lastState.copyWith(videoParams: event.toString());
+    });
+    await playerAudioParamsSubscription?.cancel();
+    playerAudioParamsSubscription = _player!.stream.audioParams.listen((event) {
+      lastState = lastState.copyWith(audioParams: event.toString());
+    });
+    await playerPlaylistSubscription?.cancel();
+    playerPlaylistSubscription = _player!.stream.playlist.listen((event) {
+      lastState = lastState.copyWith(
+        playlist: event.medias.map((e) => e.uri).toList(),
+      );
+    });
+    await playerTracksSubscription?.cancel();
+    playerTracksSubscription = _player!.stream.tracks.listen((event) {
+      final validAudioTrack = event.audio.firstWhere(
+        (track) => track.codec != null,
+        orElse: () => const mpv.AudioTrack('unknown', null, null),
+      );
+      final validVideoTrack = event.video.firstWhere(
+        (track) => track.codec != null,
+        orElse: () => const mpv.VideoTrack('unknown', null, null),
+      );
+
+      final playerAudioTracks = validAudioTrack.toString();
+      final playerVideoTracks = validVideoTrack.toString();
+
+      lastState = lastState.copyWith(
+        fps: validVideoTrack.fps,
+        audioTrack: playerAudioTracks,
+        videoTrack: playerVideoTracks,
+      );
+    });
   }
 
   Future<void> cancelPlayerDebugInfoSubscription() async {
     await playerLogSubscription?.cancel();
     await playerWidthSubscription?.cancel();
     await playerHeightSubscription?.cancel();
+    await playerBufferingSubscription?.cancel();
     await playerVideoParamsSubscription?.cancel();
     await playerAudioParamsSubscription?.cancel();
     await playerPlaylistSubscription?.cancel();
     await playerTracksSubscription?.cancel();
-    await playerAudioBitrateSubscription?.cancel();
   }
 }

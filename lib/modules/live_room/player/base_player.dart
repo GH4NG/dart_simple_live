@@ -9,7 +9,7 @@ export 'package:simple_live_app/modules/live_room/player/player_states.dart';
 abstract class BasePlayer {
   Stream<PlayerState> get stateStream;
 
-  PlayerState lastState = PlayerState();
+  PlayerState lastState = const PlayerState();
 
   Future<void> init();
 
