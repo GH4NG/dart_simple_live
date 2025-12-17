@@ -28,7 +28,6 @@ import 'package:simple_live_app/widgets/follow_user_item.dart';
 import 'package:simple_live_core/simple_live_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   final Site pSite;
@@ -151,7 +150,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       countdown.value -= 1;
       if (countdown.value <= 0) {
         timer = Timer(const Duration(seconds: 10), () async {
-          await WakelockPlus.disable();
           exit(0);
         });
         autoExitTimer?.cancel();
@@ -169,7 +167,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
           setAutoExit();
         } else {
           delayAutoExit.value = false;
-          await WakelockPlus.disable();
           exit(0);
         }
       }
@@ -407,26 +404,22 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     playHeaders = Map.from(playUrl.headers ?? {});
     currentLineIndex = 0;
     currentLineInfo.value = "线路${currentLineIndex + 1}";
-    //重置错误次数
-    mediaErrorRetryCount = 0;
     setPlayer();
   }
 
   void changePlayLine(int index) {
     currentLineIndex = index;
-    //重置错误次数
-    mediaErrorRetryCount = 0;
     setPlayer();
   }
 
   Future<void> setPlayer() async {
     // 初始化播放器
     await initializePlayer();
-    initPlayerListeners();
+    // initPlayerListeners();
 
-    if (player.lastState.playbackState == PlaybackState.playing) {
-      await player.stop();
-    }
+    // if (player.lastState.playbackState == PlaybackState.playing) {
+    //   await player.stop();
+    // }
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     errorMsg.value = "";
 
@@ -437,59 +430,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
     await player.loadVideo(playurl, headers: playHeaders);
 
-    Log.d("播放链接\r\n：$playurl");
-  }
-
-  @override
-  Future<void> mediaEnd() async {
-    super.mediaEnd();
-    if (mediaErrorRetryCount < 2) {
-      Log.d("播放结束，尝试第${mediaErrorRetryCount + 1}次刷新");
-      if (mediaErrorRetryCount == 1) {
-        //延迟一秒再刷新
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      mediaErrorRetryCount += 1;
-      //刷新一次
-      setPlayer();
-      return;
-    }
-
-    Log.d("播放结束");
-    // 遍历线路，如果全部链接都断开就是直播结束了
-    if (playUrls.length - 1 == currentLineIndex) {
-      liveStatus.value = false;
-    } else {
-      changePlayLine(currentLineIndex + 1);
-
-      //setPlayer();
-    }
-  }
-
-  int mediaErrorRetryCount = 0;
-  @override
-  Future<void> mediaError(String error) async {
-    super.mediaEnd();
-    if (mediaErrorRetryCount < 2) {
-      Log.d("播放失败，尝试第${mediaErrorRetryCount + 1}次刷新");
-      if (mediaErrorRetryCount == 1) {
-        //延迟一秒再刷新
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      mediaErrorRetryCount += 1;
-      //刷新一次
-      setPlayer();
-      return;
-    }
-
-    if (playUrls.length - 1 == currentLineIndex) {
-      errorMsg.value = "播放失败";
-      SmartDialog.showToast("播放失败:$error");
-    } else {
-      //currentLineIndex += 1;
-      //setPlayer();
-      changePlayLine(currentLineIndex + 1);
-    }
+    Log.d("播放链接：$playurl");
   }
 
   /// 读取SC
