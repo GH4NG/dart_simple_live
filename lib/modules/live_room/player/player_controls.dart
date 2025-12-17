@@ -35,12 +35,12 @@ Widget playerControls(BuildContext context, LiveRoomController controller) {
         StreamBuilder<PlayerState>(
           stream: controller.player.stateStream,
           initialData: controller.player.lastState,
-          builder: (_, snapshot) => Visibility(
-            visible: snapshot.data?.buffering ?? false,
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
+          builder: (_, snapshot) {
+            if (snapshot.data?.buffering == true) {
+              return const CircularProgressIndicator();
+            }
+            return const SizedBox.shrink();
+          },
         ),
       ),
       // 左下角SC显示
