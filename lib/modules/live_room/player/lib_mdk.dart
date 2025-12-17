@@ -148,6 +148,8 @@ class LibMDK extends BasePlayer {
       ..media = url
       ..loop = 0;
 
+    lastState = lastState.copyWith(playlist: [url]);
+
     final ret = await player.prepare();
     if (ret < 0) {
       Log.w('MDK prepare failed: $ret');
@@ -231,10 +233,16 @@ class LibMDK extends BasePlayer {
             "MDK: 视频宽: ${codec.width}, 高: ${codec.height}, 帧率: ${codec.frameRate}",
           );
 
+          final mediaInfo = _player?.mediaInfo;
+          final videoTrack = mediaInfo?.video?[0].codec;
+          final audioTrack = mediaInfo?.audio?[0].codec;
+
           lastState = lastState.copyWith(
             width: codec.width,
             height: codec.height,
             fps: codec.frameRate,
+            videoParams: videoTrack.toString(),
+            audioParams: audioTrack.toString(),
           );
           _stateController.add(lastState);
           break;
