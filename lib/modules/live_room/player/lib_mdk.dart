@@ -4,9 +4,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fvp/mdk.dart' as mdk;
 import 'package:fvp/fvp.dart' as fvp;
+import 'package:get/get.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/log.dart';
+import 'package:simple_live_app/modules/live_room/live_room_controller.dart';
 import 'package:simple_live_app/modules/live_room/player/base_player.dart';
+import 'package:simple_live_app/modules/live_room/player/player_controls.dart';
 
 class LibMDK extends BasePlayer {
   static void register() {
@@ -59,6 +62,8 @@ class LibMDK extends BasePlayer {
     double? aspectRatio,
     BoxFit fit,
   ) {
+    final controller = Get.find<LiveRoomController>();
+
     return ValueListenableBuilder<int?>(
       key: key,
       valueListenable: _textureId,
@@ -84,15 +89,21 @@ class LibMDK extends BasePlayer {
                     : 16 / 9);
 
             return SizedBox.expand(
-              child: Align(
+              child: Stack(
                 alignment: Alignment.center,
-                child: AspectRatio(
-                  aspectRatio: preferredRatio,
-                  child: Texture(
-                    textureId: id,
-                    filterQuality: FilterQuality.medium,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: AspectRatio(
+                      aspectRatio: preferredRatio,
+                      child: Texture(
+                        textureId: id,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                    ),
                   ),
-                ),
+                  playerControls(context, controller),
+                ],
               ),
             );
           },
