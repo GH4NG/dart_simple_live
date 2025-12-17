@@ -12,6 +12,18 @@ class AppSettingsController extends GetxController {
   static AppSettingsController get instance =>
       Get.find<AppSettingsController>();
 
+  /// 可选播放器日志等级
+  /// LogLevel 0: 错误 1: 警告 2: 简略 3: 详细 4: 调试（隐藏） 5: 全部（隐藏）
+  static const Map<int, String> playerLogLevelMap = {
+    0: "错误",
+    1: "警告",
+    2: "简略",
+    3: "详细",
+    // 以下两个级别被MPV官方支持，但是输出内容过于冗长，暂时隐藏
+    // 4: "调试",
+    // 5: "全部",
+  };
+
   /// 缩放模式
   RxInt scaleMode = 0.obs;
 
@@ -188,6 +200,17 @@ class AppSettingsController extends GetxController {
     if (logEnable.value) {
       Log.initWriter();
     }
+
+    playerLogEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerLogEnable,
+      false,
+    );
+
+    playerLogLevel.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerLogLevel,
+      0,
+    );
+
     customPlayerOutput.value = LocalStorageService.instance.getValue(
       LocalStorageService.kCustomPlayerOutput,
       false,
@@ -638,6 +661,24 @@ class AppSettingsController extends GetxController {
     LocalStorageService.instance.setValue(LocalStorageService.kLogEnable, e);
   }
 
+  var playerLogEnable = false.obs;
+  void setPlayerLogEnable(bool e) {
+    playerLogEnable.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerLogEnable,
+      e,
+    );
+  }
+
+  var playerLogLevel = 0.obs;
+  void setPlayerLogLevel(int e) {
+    playerLogLevel.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerLogLevel,
+      e,
+    );
+  }
+
   var customPlayerOutput = false.obs;
   void setCustomPlayerOutput(bool e) {
     customPlayerOutput.value = e;
@@ -833,33 +874,31 @@ class AppSettingsController extends GetxController {
     };
 
     hardwareDecoders.value = {
-      "no": "no",
-      "auto": "auto",
-      "auto-safe": "auto-safe",
-      "yes": "yes",
-      "auto-copy": "auto-copy",
-      "d3d11va": "d3d11va",
-      "d3d11va-copy": "d3d11va-copy",
-      "videotoolbox": "videotoolbox",
-      "videotoolbox-copy": "videotoolbox-copy",
-      "vaapi": "vaapi",
-      "vaapi-copy": "vaapi-copy",
-      "nvdec": "nvdec",
-      "nvdec-copy": "nvdec-copy",
-      "drm": "drm",
-      "drm-copy": "drm-copy",
-      "vulkan": "vulkan",
-      "vulkan-copy": "vulkan-copy",
-      "dxva2": "dxva2",
-      "dxva2-copy": "dxva2-copy",
-      "vdpau": "vdpau",
-      "vdpau-copy": "vdpau-copy",
-      "mediacodec": "mediacodec",
-      "mediacodec-copy": "mediacodec-copy",
-      "cuda": "cuda",
-      "cuda-copy": "cuda-copy",
-      "crystalhd": "crystalhd",
-      "rkmpp": "rkmpp",
+      'auto': '启用任意可用解码器',
+      'auto-safe': '启用最佳解码器',
+      'auto-copy': '启用带拷贝功能的最佳解码器',
+      'd3d11va': 'DirectX11 (windows8 及以上)',
+      'd3d11va-copy': 'DirectX11 (windows8 及以上) (非直通)',
+      'videotoolbox': 'VideoToolbox (macOS / iOS)',
+      'videotoolbox-copy': 'VideoToolbox (macOS / iOS) (非直通)',
+      'vaapi': 'VAAPI (Linux)',
+      'vaapi-copy': 'VAAPI (Linux) (非直通)',
+      'nvdec': 'NVDEC (NVIDIA独占)',
+      'nvdec-copy': 'NVDEC (NVIDIA独占) (非直通)',
+      'drm': 'DRM (Linux)',
+      'drm-copy': 'DRM (Linux) (非直通)',
+      'vulkan': 'Vulkan (全平台) (实验性)',
+      'vulkan-copy': 'Vulkan (全平台) (实验性) (非直通)',
+      'dxva2': 'DXVA2 (Windows7 及以上)',
+      'dxva2-copy': 'DXVA2 (Windows7 及以上) (非直通)',
+      'vdpau': 'VDPAU (Linux)',
+      'vdpau-copy': 'VDPAU (Linux) (非直通)',
+      'mediacodec': 'MediaCodec (Android)',
+      'mediacodec-copy': 'MediaCodec (Android) (非直通)',
+      'cuda': 'CUDA (NVIDIA独占) (过时)',
+      'cuda-copy': 'CUDA (NVIDIA独占) (过时) (非直通)',
+      'crystalhd': 'CrystalHD (全平台) (过时)',
+      'rkmpp': 'Rockchip MPP (仅部分Rockchip芯片)',
     };
 
     String savedDecoder = videoDecoder.value;
