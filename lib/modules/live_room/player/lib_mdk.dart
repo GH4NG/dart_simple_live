@@ -1,11 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
-import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
-import 'package:simple_live_app/modules/live_room/live_room_controller.dart';
-import 'package:simple_live_app/modules/live_room/player/player_controls.dart';
+import 'package:flutter/material.dart';
 import 'package:fvp/mdk.dart' as mdk;
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
@@ -14,12 +10,23 @@ import 'package:simple_live_app/modules/live_room/player/base_player.dart';
 
 class LibMDK extends BasePlayer {
   static void register() {
+    final logLevel =
+        {
+          0: "Error", // 错误
+          1: "Warning", // 警告
+          2: "Debug", // 简略
+          3: "All", // 所有日志
+          -1: "off", // 关闭日志
+        }[AppSettingsController.instance.playerLogLevel.value] ??
+        "off"; // 默认 "off"
+
+    final finalLogLevel = AppSettingsController.instance.playerLogEnable.value
+        ? logLevel
+        : "off";
+
     fvp.registerWith(
       options: {
-        'platforms': ['windows', 'macos', 'linux', 'android', 'ios'],
-        'global': {
-          'log': 'all', // off, error, warning, info, debug, all(default)
-        },
+        'global': {'log': finalLogLevel},
       },
     );
   }
@@ -40,13 +47,10 @@ class LibMDK extends BasePlayer {
     }
 
     register();
+
     _player = mdk.Player();
-    _player!.onStateChanged((oldState, newState) {
-      _updateState();
-    });
-    _player!.onEvent((event) {
-      // TODO: Handle events
-    });
+
+    setupPlayerDebugInfoSubscription();
   }
 
   @override
@@ -60,29 +64,36 @@ class LibMDK extends BasePlayer {
       valueListenable: _textureId,
       builder: (context, id, _) {
         if (id == null || id < 0) {
-          return const SizedBox.expand();
+          return const SizedBox.expand(
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final size = lastState.videoSize;
-            if (size == Size.zero) {
-              return const SizedBox.expand();
-            }
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: FittedBox(
-                    fit: fit,
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: size.width,
-                      height: size.height,
-                      child: Texture(textureId: id),
-                    ),
+
+        return StreamBuilder<PlayerState>(
+          stream: stateStream,
+          initialData: lastState,
+          builder: (context, snapshot) {
+            final state = snapshot.data ?? lastState;
+            final hasVideoSize =
+                (state.width ?? 0) > 0 && (state.height ?? 0) > 0;
+
+            final double preferredRatio =
+                aspectRatio ??
+                (hasVideoSize
+                    ? state.width!.toDouble() / state.height!.toDouble()
+                    : 16 / 9);
+
+            return SizedBox.expand(
+              child: Align(
+                alignment: Alignment.center,
+                child: AspectRatio(
+                  aspectRatio: preferredRatio,
+                  child: Texture(
+                    textureId: id,
+                    filterQuality: FilterQuality.medium,
                   ),
                 ),
-                playerControls(context, Get.find<LiveRoomController>()),
-              ],
+              ),
             );
           },
         );
@@ -98,9 +109,6 @@ class LibMDK extends BasePlayer {
     _stateController.close();
     _textureId.dispose();
   }
-
-  @override
-  Future<void> open(BuildContext context) async {}
 
   @override
   Future<void> loadVideo(
@@ -153,7 +161,7 @@ class LibMDK extends BasePlayer {
       return;
     }
     _textureId.value = id;
-    _updateState();
+
     if (play) {
       await this.play();
     }
@@ -181,7 +189,6 @@ class LibMDK extends BasePlayer {
   Future<void> stop() async {
     _player?.state = mdk.PlaybackState.stopped;
     _textureId.value = null;
-    _updateState();
   }
 
   @override
@@ -197,97 +204,41 @@ class LibMDK extends BasePlayer {
 
   @override
   Future<Uint8List?> snapshot() async {
-    final player = _player;
-    if (player == null) return null;
-
-    final rgbaData = await player.snapshot();
-    if (rgbaData == null) return null;
-
-    final size = _getVideoSize();
-    if (size == Size.zero) return null;
-
-    final width = size.width.toInt();
-    final height = size.height.toInt();
-
-    final completer = Completer<ui.Image>();
-    ui.decodeImageFromPixels(
-      rgbaData,
-      width,
-      height,
-      ui.PixelFormat.rgba8888,
-      completer.complete,
-    );
-    final ui.Image image = await completer.future;
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    return byteData?.buffer.asUint8List();
+    return await _player?.snapshot();
   }
 
-  void _updateState() {
-    if (_player == null) return;
-    final info = _player!.mediaInfo;
-    final newState = PlayerState(
-      playbackState: _mapState(_player!.state),
-      mediaInfo: MediaInfo(
-        duration: info.duration,
-        bitRate: info.bitRate,
-        format: info.format ?? '',
-        streams: info.streams,
-        video: info.video
-            ?.map(
-              (v) => MediaStream(
-                index: v.index,
-                codec: MediaCodec(
-                  codec: v.codec.codec,
-                  width: v.codec.width,
-                  height: v.codec.height,
-                  frameRate: v.codec.frameRate,
-                  format: v.codec.format.toString(),
-                ),
-              ),
-            )
-            .toList(),
-        audio: info.audio
-            ?.map(
-              (a) => MediaStream(
-                index: a.index,
-                codec: MediaCodec(
-                  codec: a.codec.codec,
-                  width: 0,
-                  height: 0,
-                  frameRate: a.codec.frameRate.toDouble(),
-                  format: '',
-                ),
-              ),
-            )
-            .toList(),
-        metadata: info.metadata,
-      ),
-      videoSize: _getVideoSize(),
-      textureId: _textureId.value,
-    );
-    lastState = newState;
-    _stateController.add(newState);
-  }
+  Future<void> setupPlayerDebugInfoSubscription() async {
+    _player?.onEvent((mdk.MediaEvent event) {
+      // Log.d("MDK: ${event.toString()}");
 
-  Size _getVideoSize() {
-    if (_player == null) return Size.zero;
-    final codec = _player!.mediaInfo.video?.firstOrNull?.codec;
-    if (codec != null) {
-      return Size(codec.width.toDouble(), codec.height.toDouble());
-    }
-    return Size.zero;
-  }
+      switch (event.category) {
+        case "render.video":
+          if (event.detail == "1st_frame") {
+            Log.d("MDK: 首帧已渲染");
+          }
 
-  PlaybackState _mapState(mdk.PlaybackState state) {
-    switch (state) {
-      case mdk.PlaybackState.stopped:
-        return PlaybackState.stopped;
-      case mdk.PlaybackState.playing:
-        return PlaybackState.playing;
-      case mdk.PlaybackState.paused:
-        return PlaybackState.paused;
-      default:
-        return PlaybackState.stopped;
-    }
+        case "video":
+          if (event.detail != "size") break;
+          Log.d("MDK: 视频帧大小变化");
+
+          final codec = _player?.mediaInfo.video?.firstOrNull?.codec;
+          if (codec == null) {
+            Log.d("MDK: 未获取到视频编码信息");
+            break;
+          }
+
+          Log.d(
+            "MDK: 视频宽: ${codec.width}, 高: ${codec.height}, 帧率: ${codec.frameRate}",
+          );
+
+          lastState = lastState.copyWith(
+            width: codec.width,
+            height: codec.height,
+            fps: codec.frameRate,
+          );
+          _stateController.add(lastState);
+          break;
+      }
+    });
   }
 }

@@ -10,7 +10,9 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:simple_live_app/app/event_bus.dart';
+import 'package:simple_live_app/modules/live_room/player/base_player.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
@@ -18,12 +20,7 @@ import 'package:simple_live_app/app/controller/base_controller.dart';
 import 'package:simple_live_app/app/custom_throttle.dart';
 import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/app/utils.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
-
-import 'package:simple_live_app/modules/live_room/player/base_player.dart';
-import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
-import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
 
 mixin PlayerMixin {
   GlobalKey globalPlayerKey = GlobalKey();
@@ -174,11 +171,22 @@ mixin PlayerDanmakuMixin on PlayerStateMixin {
 
   void initDanmakuController(DanmakuController e) {
     danmakuController = e;
+    // danmakuController?.updateOption(
+    //   DanmakuOption(
+    //     fontSize: AppSettingsController.instance.danmuSize.value,
+    //     area: AppSettingsController.instance.danmuArea.value,
+    //     duration: AppSettingsController.instance.danmuSpeed.value,
+    //     opacity: AppSettingsController.instance.danmuOpacity.value,
+    //     strokeWidth: AppSettingsController.instance.danmuStrokeWidth.value,
+    //     fontWeight: FontWeight
+    //         .values[AppSettingsController.instance.danmuFontWeight.value],
+    //   ),
+    // );
   }
 
   void updateDanmuOption(DanmakuOption? option) {
-    if (option == null) return;
-    danmakuController?.updateOption(option);
+    if (danmakuController == null || option == null) return;
+    danmakuController!.updateOption(option);
   }
 
   void disposeDanmakuController() {
@@ -197,15 +205,16 @@ mixin PlayerDanmakuMixin on PlayerStateMixin {
 
 mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
   final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-  final screenBrightness = ScreenBrightness();
-  final VolumeController volumeController = VolumeController.instance;
+
   final pip = Floating();
   StreamSubscription<PiPStatus>? _pipSubscription;
+
+  //final VolumeController volumeController = VolumeController();
 
   /// 初始化一些系统状态
   Future<void> initSystem() async {
     if (Platform.isAndroid || Platform.isIOS) {
-      volumeController.showSystemUI = false;
+      VolumeController.instance.showSystemUI = false;
     }
 
     // 屏幕常亮
@@ -238,8 +247,6 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         Log.logPrint(e);
       }
     }
-
-    await WakelockPlus.disable();
   }
 
   /// 进入全屏
@@ -307,8 +314,8 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
 
       windowManager.setTitleBarStyle(TitleBarStyle.hidden);
       // 获取视频窗口大小
-      var videoWidth = width.value;
-      var videoHeight = height.value;
+      var width = player.lastState.width;
+      var height = player.lastState.height;
 
       // 横屏还是竖屏
       if (height! > width!) {
@@ -555,7 +562,7 @@ mixin PlayerGestureControlMixin
       showGestureTip.value = true;
     }
     if (Platform.isAndroid || Platform.isIOS) {
-      _currentVolume = await volumeController.getVolume();
+      _currentVolume = await VolumeController.instance.getVolume();
     }
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       _currentBrightness = await ScreenBrightness.instance.application;
@@ -619,7 +626,7 @@ mixin PlayerGestureControlMixin
 
   Future _realSetVolume(int volume) async {
     Log.logPrint(volume);
-    volumeController.setVolume(volume / 100);
+    VolumeController.instance.setVolume(volume / 100);
   }
 
   void setGestureBrightness(double dy) {
@@ -675,13 +682,15 @@ class PlayerController extends BaseController
       player = LibMDK();
     }
     initSystem();
-    initGlobalListeners();
+    //设置音量
+    player.setVolume(AppSettingsController.instance.playerVolume.value);
     super.onInit();
   }
 
   StreamSubscription<PlayerState>? _stateSubscription;
 
   void disposeStream() {
+    _stateSubscription?.cancel();
     _pipSubscription?.cancel();
   }
 
@@ -690,27 +699,27 @@ class PlayerController extends BaseController
       title: "播放信息",
       child: ListView(
         children: [
-          ListTile(
-            title: const Text("Source"),
-            subtitle: Text(
-              player.lastState.playlist.first,
-            ),
-            onLongPress: () {
-              Clipboard.setData(
-                ClipboardData(text: player.lastState.playlist.first),
-              );
-            },
-          ),
+          // ListTile(
+          //   title: const Text("Source"),
+          //   subtitle: Text(
+          //     player.lastState.playlist.first,
+          //   ),
+          //   onLongPress: () {
+          //     Clipboard.setData(
+          //       ClipboardData(text: player.lastState.playlist.first),
+          //     );
+          //   },
+          // ),
           ListTile(
             title: const Text("Resolution"),
             subtitle: Text(
-              '${player.lastState.width!}x${player.lastState.height!} @ ${player.lastState.fps!}fps',
+              '${player.lastState.width}x${player.lastState.height} @ ${player.lastState.fps}fps',
             ),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
                   text:
-                      '${player.lastState.width!}x${player.lastState.height!} @ ${player.lastState.fps!}fps',
+                      '${player.lastState.width}x${player.lastState.height} @ ${player.lastState.fps}fps',
                 ),
               );
             },

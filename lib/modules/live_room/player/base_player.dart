@@ -21,8 +21,6 @@ abstract class BasePlayer {
 
   Future<void> dispose();
 
-  Future<void> open(BuildContext context);
-
   Future<void> loadVideo(
     String url, {
     Map<String, String>? headers,
