@@ -700,26 +700,15 @@ class PlayerController extends BaseController
       child: ListView(
         children: [
           ListTile(
-            title: const Text("Source"),
-            subtitle: Text(
-              player.lastState.playlist.first,
-            ),
-            onLongPress: () {
-              Clipboard.setData(
-                ClipboardData(text: player.lastState.playlist.first),
-              );
-            },
-          ),
-          ListTile(
             title: const Text("Resolution"),
             subtitle: Text(
-              '${player.lastState.width}x${player.lastState.height} @ ${player.lastState.fps}fps',
+              '${player.lastState.width}x${player.lastState.height} ${player.lastState.fps}fps',
             ),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
                   text:
-                      '${player.lastState.width}x${player.lastState.height} @ ${player.lastState.fps}fps',
+                      '${player.lastState.width}x${player.lastState.height} ${player.lastState.fps}fps',
                 ),
               );
             },
@@ -765,6 +754,17 @@ class PlayerController extends BaseController
                 ClipboardData(
                   text: "AudioTrack\n${player.lastState.audioTrack}",
                 ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("Source"),
+            subtitle: Text(
+              player.lastState.playlist.first,
+            ),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(text: player.lastState.playlist.first),
               );
             },
           ),
