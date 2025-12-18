@@ -23,10 +23,10 @@ dependencies:
     intl: ^0.20.2 #国际化
     qr_flutter: ^4.1.0 #二维码生成
     dynamic_color: ^1.8.1 #动态颜色
-    path: any
+    path: ^1.9.1
     udp: ^5.0.3 #UDP
     uuid: ^4.5.1 #UUID
-    synchronized: ^3.3.1 #线程安全
+    synchronized: ^3.4.0 #线程安全
     collection: ^1.18.0
 
     #Widget
@@ -42,7 +42,7 @@ dependencies:
             ref: main
 
     #系统交互
-    package_info_plus: ^9.0.0 #包信息
+    package_info_plus: 8.3.1 #包信息
     device_info_plus: ^12.2.0 #设备信息
     url_launcher: ^6.3.1 #打开链接
     share_plus: ^12.0.1 #分享
@@ -52,7 +52,7 @@ dependencies:
     image_gallery_saver_plus: ^4.0.1 #图片保存到相册
     screen_brightness: ^2.1.7 #亮度控制
     auto_orientation_v2: ^2.3.6 #屏幕方向
-    wakelock_plus: ^1.4.0 #屏幕常亮
+    # wakelock_plus: ^1.4.0 #屏幕常亮
     file_picker: ^10.1.2 #文件选择
     window_manager: ^0.5.1 #窗口管理
     floating: ^6.0.0 #PIP画中画
@@ -70,15 +70,70 @@ dependencies:
     signalr_netcore: ^1.3.9 #SignalR
 
     # 视频播放
-    media_kit: ^1.2.3
-    media_kit_video: ^2.0.1
-    media_kit_libs_video: ^1.0.7
+    media_kit:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./media_kit
+    media_kit_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./media_kit_video
+    media_kit_libs_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/universal/media_kit_libs_video
+
     fvp: ^0.35.1
 
     flutter:
         sdk: flutter
     flutter_localizations:
         sdk: flutter
+
+dependency_overrides:
+    media_kit:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./media_kit
+    media_kit_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./media_kit_video
+    media_kit_libs_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/universal/media_kit_libs_video
+    media_kit_libs_linux:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/linux/media_kit_libs_linux
+    media_kit_libs_ios_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/ios/media_kit_libs_ios_video
+    media_kit_libs_android_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/android/media_kit_libs_android_video
+    media_kit_libs_windows_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/windows/media_kit_libs_windows_video
+    media_kit_libs_macos_video:
+        git:
+            url: https://github.com/Predidit/media-kit.git
+            ref: main
+            path: ./libs/macos/media_kit_libs_macos_video
 
 dev_dependencies:
     flutter_lints: ^6.0.0
