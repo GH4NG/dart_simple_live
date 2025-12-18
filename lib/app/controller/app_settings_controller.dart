@@ -246,6 +246,11 @@ class AppSettingsController extends GetxController {
       false,
     );
 
+    mdkAndroidTunnel.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kMdkAndroidTunnel,
+      false,
+    );
+
     videoDecoder.value = LocalStorageService.instance.getValue(
       LocalStorageService.kVideoDecoder,
       "FFmpeg",
@@ -720,6 +725,15 @@ class AppSettingsController extends GetxController {
     customPlayerDecoder.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kCustomPlayerDecoder,
+      e,
+    );
+  }
+
+  var mdkAndroidTunnel = false.obs;
+  void setMdkAndroidTunnel(bool e) {
+    mdkAndroidTunnel.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kMdkAndroidTunnel,
       e,
     );
   }

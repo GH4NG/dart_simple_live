@@ -16,10 +16,10 @@ class LibMDK extends BasePlayer {
   static void register() {
     final logLevel =
         {
-          0: "Error", // 错误
-          1: "Warning", // 警告
-          2: "Debug", // 简略
-          3: "All", // 所有日志
+          0: "error", // 错误
+          1: "warning", // 警告
+          2: "debug", // 简略
+          3: "all", // 所有日志
           -1: "off", // 关闭日志
         }[AppSettingsController.instance.playerLogLevel.value] ??
         "off"; // 默认 "off"
@@ -30,7 +30,10 @@ class LibMDK extends BasePlayer {
 
     fvp.registerWith(
       options: {
+        'platforms': ['windows', 'macos', 'linux', 'android', 'ios'],
+        'lowLatency': 2,
         'global': {'log': finalLogLevel},
+        'tunnel': AppSettingsController.instance.mdkAndroidTunnel.value,
       },
     );
   }

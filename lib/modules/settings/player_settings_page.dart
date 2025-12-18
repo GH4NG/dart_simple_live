@@ -97,6 +97,13 @@ class _MdkSettings extends StatelessWidget {
             ),
           ),
           SettingsSwitch(
+            title: "Android Tunnel",
+            subtitle:
+                "AMediacodec/MediaCodec 解码器直接输出到 SurfaceTexture 表面，不使用 OpenGL。可能更高效，但某些功能不支持。",
+            value: c.mdkAndroidTunnel.value,
+            onChanged: c.setMdkAndroidTunnel,
+          ),
+          SettingsSwitch(
             title: "自定义解码器",
             subtitle: "开启后可手动选择解码器",
             value: c.customPlayerDecoder.value,
