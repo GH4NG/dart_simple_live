@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:fvp/mdk.dart' as mdk;
@@ -217,7 +218,21 @@ class LibMDK extends BasePlayer {
 
   @override
   Future<Uint8List?> snapshot() async {
-    return await _player?.snapshot();
+    final Uint8List? rgbaData = await _player?.snapshot(
+      width: lastState.width,
+      height: lastState.height,
+    );
+    final completer = Completer<ui.Image>();
+    ui.decodeImageFromPixels(
+      rgbaData!,
+      lastState.width!,
+      lastState.height!,
+      ui.PixelFormat.rgba8888,
+      completer.complete,
+    );
+    final ui.Image image = await completer.future;
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData?.buffer.asUint8List();
   }
 
   Future<void> setupPlayerDebugInfoSubscription() async {
