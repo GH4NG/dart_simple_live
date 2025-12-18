@@ -159,6 +159,9 @@ class LocalStorageService extends GetxService {
   /// 开启自定义播放器解码器
   static const String kCustomPlayerDecoder = "CustomPlayerDecoder";
 
+  /// MDK Android Tunnel 模式
+  static const String kMdkAndroidTunnel = "MdkAndroidTunnel";
+
   /// 视频解码器
   static const String kVideoDecoder = "VideoDecoder";
 
