@@ -171,17 +171,6 @@ mixin PlayerDanmakuMixin on PlayerStateMixin {
 
   void initDanmakuController(DanmakuController e) {
     danmakuController = e;
-    // danmakuController?.updateOption(
-    //   DanmakuOption(
-    //     fontSize: AppSettingsController.instance.danmuSize.value,
-    //     area: AppSettingsController.instance.danmuArea.value,
-    //     duration: AppSettingsController.instance.danmuSpeed.value,
-    //     opacity: AppSettingsController.instance.danmuOpacity.value,
-    //     strokeWidth: AppSettingsController.instance.danmuStrokeWidth.value,
-    //     fontWeight: FontWeight
-    //         .values[AppSettingsController.instance.danmuFontWeight.value],
-    //   ),
-    // );
   }
 
   void updateDanmuOption(DanmakuOption? option) {
@@ -208,8 +197,6 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
 
   final pip = Floating();
   StreamSubscription<PiPStatus>? _pipSubscription;
-
-  //final VolumeController volumeController = VolumeController();
 
   /// 初始化一些系统状态
   Future<void> initSystem() async {
@@ -449,10 +436,12 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
     var width = player.lastState.width;
     var height = player.lastState.height;
     Rational ratio = const Rational.landscape();
-    if (height! > width!) {
-      ratio = const Rational.vertical();
-    } else {
-      ratio = const Rational.landscape();
+    if (width != null && height != null) {
+      if (height > width) {
+        ratio = const Rational.vertical();
+      } else {
+        ratio = const Rational.landscape();
+      }
     }
     await pip.enable(
       ImmediatePiP(
@@ -680,6 +669,8 @@ class PlayerController extends BaseController
       player = LibMPV();
     } else if (AppSettingsController.instance.playerType.value == 1) {
       player = LibMDK();
+    } else {
+      player = LibMPV();
     }
     initSystem();
     //设置音量

@@ -218,15 +218,20 @@ class LibMDK extends BasePlayer {
 
   @override
   Future<Uint8List?> snapshot() async {
+    final width = lastState.width;
+    final height = lastState.height;
     final Uint8List? rgbaData = await _player?.snapshot(
-      width: lastState.width,
-      height: lastState.height,
+      width: width,
+      height: height,
     );
+    if (rgbaData == null || width == null || height == null) {
+      return null;
+    }
     final completer = Completer<ui.Image>();
     ui.decodeImageFromPixels(
-      rgbaData!,
-      lastState.width!,
-      lastState.height!,
+      rgbaData,
+      width,
+      height,
       ui.PixelFormat.rgba8888,
       completer.complete,
     );

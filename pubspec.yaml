@@ -42,7 +42,7 @@ dependencies:
             ref: main
 
     #系统交互
-    package_info_plus: 8.3.1 #包信息
+    package_info_plus: ^8.3.1 #包信息
     device_info_plus: ^12.2.0 #设备信息
     url_launcher: ^6.3.1 #打开链接
     share_plus: ^12.0.1 #分享

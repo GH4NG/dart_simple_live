@@ -414,11 +414,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   Future<void> setPlayer() async {
     // 初始化播放器
     await initializePlayer();
-    // initPlayerListeners();
 
-    // if (player.lastState.playbackState == PlaybackState.playing) {
-    //   await player.stop();
-    // }
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     errorMsg.value = "";
 
@@ -446,10 +442,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   }
 
   /// 移除掉已到期的SC
-  void removeSuperChat(LiveSuperChatMessage message) {
-    superChats.remove(message);
-  }
-
   Future<void> removeSuperChats() async {
     var now = DateTime.now().millisecondsSinceEpoch;
     superChats.value = superChats
