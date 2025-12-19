@@ -552,7 +552,7 @@ Widget buildControls(BuildContext context, LiveRoomController controller) {
                 Visibility(
                   visible: controller.fullScreenState.value,
                   child: Offstage(
-                    offstage: controller.isVertical.value,
+                    offstage: controller.player.lastState.isVertical ?? false,
                     child: TextButton(
                       onPressed: () {
                         controller.showQualitySheet();
@@ -572,7 +572,7 @@ Widget buildControls(BuildContext context, LiveRoomController controller) {
                 Visibility(
                   visible: controller.fullScreenState.value,
                   child: Offstage(
-                    offstage: controller.isVertical.value,
+                    offstage: controller.player.lastState.isVertical ?? false,
                     child: TextButton(
                       onPressed: () {
                         controller.showPlayUrlsSheet();
@@ -677,7 +677,7 @@ Widget buildDanmuView(BuildContext context, LiveRoomController controller) {
 }
 
 void showLinesInfo(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showPlayUrlsSheet();
     return;
   }
@@ -726,7 +726,7 @@ void showLinesInfo(LiveRoomController controller) {
 }
 
 void showQualitiesInfo(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showQualitySheet();
     return;
   }
@@ -755,7 +755,7 @@ void showQualitiesInfo(LiveRoomController controller) {
 }
 
 void showDanmakuSettings(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showDanmuSettingsSheet();
     return;
   }
@@ -773,7 +773,7 @@ void showDanmakuSettings(LiveRoomController controller) {
 }
 
 void showPlayerSettings(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showPlayerSettingsSheet();
     return;
   }
@@ -833,7 +833,7 @@ void showPlayerSettings(LiveRoomController controller) {
 }
 
 void showFollowUser(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showFollowUserSheet();
     return;
   }

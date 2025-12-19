@@ -92,7 +92,7 @@ mixin PlayerStateMixin on PlayerMixin {
   Timer? hideSeekTipTimer;
 
   /// 是否为竖屏直播间
-  Rx<bool> isVertical = false.obs;
+  // var isVertical = false.obs;
 
   /// 是否自动全屏
   bool autoFullScreen = false;
@@ -246,7 +246,7 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         overlays: [],
       );
 
-      if (isVertical.value) {
+      if (player.lastState.isVertical ?? false) {
         //竖屏视频保持竖屏方向
         await setPortraitOrientation();
       } else {
@@ -678,17 +678,6 @@ class PlayerController extends BaseController
     initSystem();
     //设置音量
     player.setVolume(AppSettingsController.instance.playerVolume.value);
-
-    _stateSubscription = player.stateStream.listen((state) {
-      if (state.width != null && state.height != null) {
-        width.value = state.width!;
-        height.value = state.height!;
-        isVertical.value = state.height! > state.width!;
-        Log.d(
-          '视频尺寸: ${state.width}x${state.height}, 是否竖屏: ${isVertical.value}',
-        );
-      }
-    });
 
     super.onInit();
   }

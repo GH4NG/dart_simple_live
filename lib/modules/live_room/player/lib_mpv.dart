@@ -69,7 +69,7 @@ class LibMPV extends BasePlayer {
     final roomController = Get.find<LiveRoomController>();
     final settings = AppSettingsController.instance;
     return Video(
-      key: UniqueKey(),
+      key: key,
       controller: _controller!,
       pauseUponEnteringBackgroundMode: settings.playerAutoPause.value,
       resumeUponEnteringForegroundMode: settings.playerAutoPause.value,
@@ -148,6 +148,11 @@ class LibMPV extends BasePlayer {
     return await player.screenshot();
   }
 
+  void setState(PlayerState state) {
+    lastState = state;
+    _stateController.add(state);
+  }
+
   StreamSubscription<mpv.PlayerLog>? playerLogSubscription;
   StreamSubscription<int?>? playerWidthSubscription;
   StreamSubscription<int?>? playerHeightSubscription;
@@ -161,6 +166,9 @@ class LibMPV extends BasePlayer {
     final player = _player;
     if (player == null) return;
 
+    var videoWidth = 0;
+    var videoHeight = 0;
+
     final settings = AppSettingsController.instance;
 
     await playerLogSubscription?.cancel();
@@ -172,34 +180,55 @@ class LibMPV extends BasePlayer {
 
     await playerWidthSubscription?.cancel();
     playerWidthSubscription = player.stream.width.listen((event) {
-      lastState = lastState.copyWith(width: event ?? 0);
+      videoWidth = event ?? 0;
+      final isVertical = videoHeight > 0 && videoWidth > 0
+          ? videoHeight > videoWidth
+          : null;
+      setState(
+        lastState.copyWith(
+          height: videoHeight,
+          width: videoWidth,
+          isVertical: isVertical,
+        ),
+      );
     });
 
     await playerHeightSubscription?.cancel();
     playerHeightSubscription = player.stream.height.listen((event) {
-      lastState = lastState.copyWith(height: event ?? 0);
+      videoHeight = event ?? 0;
+      final isVertical = videoHeight > 0 && videoWidth > 0
+          ? videoHeight > videoWidth
+          : null;
+      setState(
+        lastState.copyWith(
+          height: videoHeight,
+          width: videoWidth,
+          isVertical: isVertical,
+        ),
+      );
     });
 
     await playerBufferingSubscription?.cancel();
     playerBufferingSubscription = player.stream.buffering.listen((event) {
-      lastState = lastState.copyWith(buffering: event);
-      _stateController.add(lastState);
+      setState(lastState.copyWith(buffering: event));
     });
 
     await playerVideoParamsSubscription?.cancel();
     playerVideoParamsSubscription = player.stream.videoParams.listen((event) {
-      lastState = lastState.copyWith(videoParams: event.toString());
+      setState(lastState.copyWith(videoParams: event.toString()));
     });
 
     await playerAudioParamsSubscription?.cancel();
     playerAudioParamsSubscription = player.stream.audioParams.listen((event) {
-      lastState = lastState.copyWith(audioParams: event.toString());
+      setState(lastState.copyWith(audioParams: event.toString()));
     });
 
     await playerPlaylistSubscription?.cancel();
     playerPlaylistSubscription = player.stream.playlist.listen((event) {
-      lastState = lastState.copyWith(
-        playlist: event.medias.map((e) => e.uri).toList(),
+      setState(
+        lastState.copyWith(
+          playlist: event.medias.map((e) => e.uri).toList(),
+        ),
       );
     });
 
@@ -215,10 +244,12 @@ class LibMPV extends BasePlayer {
         orElse: () => const mpv.VideoTrack('unknown', null, null),
       );
 
-      lastState = lastState.copyWith(
-        fps: validVideoTrack.fps,
-        audioTrack: validAudioTrack.toString(),
-        videoTrack: validVideoTrack.toString(),
+      setState(
+        lastState.copyWith(
+          fps: validVideoTrack.fps,
+          audioTrack: validAudioTrack.toString(),
+          videoTrack: validVideoTrack.toString(),
+        ),
       );
     });
   }

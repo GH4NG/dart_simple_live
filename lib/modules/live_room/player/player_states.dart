@@ -15,6 +15,8 @@ class PlayerState {
 
   final int? height;
 
+  final bool? isVertical;
+
   final double? fps;
 
   const PlayerState({
@@ -26,6 +28,7 @@ class PlayerState {
     this.videoTrack = "",
     this.width,
     this.height,
+    this.isVertical,
     this.fps,
   });
 
@@ -38,6 +41,7 @@ class PlayerState {
     String? videoTrack,
     int? width,
     int? height,
+    bool? isVertical,
     double? fps,
   }) {
     return PlayerState(
@@ -49,6 +53,7 @@ class PlayerState {
       videoTrack: videoTrack ?? this.videoTrack,
       width: width ?? this.width,
       height: height ?? this.height,
+      isVertical: isVertical ?? this.isVertical,
       fps: fps ?? this.fps,
     );
   }
@@ -64,6 +69,7 @@ class PlayerState {
       'videoTrack: $videoTrack, '
       'width: $width, '
       'height: $height, '
+      'isVertical: $isVertical, '
       'fps: $fps'
       ')';
 }

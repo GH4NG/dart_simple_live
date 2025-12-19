@@ -263,22 +263,26 @@ class LibMDK extends BasePlayer {
             break;
           }
 
-          Log.d(
-            "MDK: 视频宽: ${codec.width}, 高: ${codec.height}, 帧率: ${codec.frameRate}",
-          );
-
+          final videoWidth = codec.width;
+          final videoHeight = codec.height;
           final mediaInfo = _player?.mediaInfo;
           final videoTrack = mediaInfo?.video?[0].codec;
           final audioTrack = mediaInfo?.audio?[0].codec;
-
+          final isVertical = videoHeight > 0 && videoWidth > 0
+              ? videoHeight > videoWidth
+              : null;
           lastState = lastState.copyWith(
-            width: codec.width,
-            height: codec.height,
+            width: videoWidth,
+            height: videoHeight,
+            isVertical: isVertical,
             fps: codec.frameRate,
             videoParams: videoTrack.toString(),
             audioParams: audioTrack.toString(),
           );
           _stateController.add(lastState);
+          Log.d(
+            "MDK: 视频尺寸变化: ${videoWidth}x${videoHeight}, fps=${codec.frameRate}, isVertical=$isVertical",
+          );
           break;
       }
     });
