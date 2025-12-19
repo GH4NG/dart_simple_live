@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:fvp/mdk.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:simple_live_app/app/app_style.dart';
 import 'package:simple_live_app/app/constant.dart';
@@ -28,7 +27,6 @@ import 'package:simple_live_app/widgets/follow_user_item.dart';
 import 'package:simple_live_core/simple_live_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   final Site pSite;
@@ -151,7 +149,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       countdown.value -= 1;
       if (countdown.value <= 0) {
         timer = Timer(const Duration(seconds: 10), () async {
-          await WakelockPlus.disable();
           exit(0);
         });
         autoExitTimer?.cancel();
@@ -169,7 +166,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
           setAutoExit();
         } else {
           delayAutoExit.value = false;
-          await WakelockPlus.disable();
           exit(0);
         }
       }
@@ -407,15 +403,11 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     playHeaders = Map.from(playUrl.headers ?? {});
     currentLineIndex = 0;
     currentLineInfo.value = "线路${currentLineIndex + 1}";
-    //重置错误次数
-    mediaErrorRetryCount = 0;
     setPlayer();
   }
 
   void changePlayLine(int index) {
     currentLineIndex = index;
-    //重置错误次数
-    mediaErrorRetryCount = 0;
     setPlayer();
   }
 
@@ -423,10 +415,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     // 初始化播放器
     await initializePlayer();
 
-    if (player.state == PlaybackState.playing) {
-      player.state = PlaybackState.stopped;
-      player.waitFor(PlaybackState.stopped);
-    }
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     errorMsg.value = "";
 
@@ -435,74 +423,9 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       playurl = playurl.replaceAll("http://", "https://");
     }
 
-    if (playHeaders != null && playHeaders!.isNotEmpty) {
-      final headers = playHeaders!.entries
-          .map((e) => "${e.key}: ${e.value}")
-          .join("\r\n");
-      player.setProperty("avio.headers", headers);
-    }
+    await player.loadVideo(playurl, headers: playHeaders);
 
-    player.media = playurl;
-    player
-      ..prepare()
-      ..state = PlaybackState.playing;
-    if (player.textureId.value == null) {
-      player.updateTexture();
-    }
-
-    Log.d("播放链接\r\n：$playurl");
-  }
-
-  @override
-  Future<void> mediaEnd() async {
-    super.mediaEnd();
-    if (mediaErrorRetryCount < 2) {
-      Log.d("播放结束，尝试第${mediaErrorRetryCount + 1}次刷新");
-      if (mediaErrorRetryCount == 1) {
-        //延迟一秒再刷新
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      mediaErrorRetryCount += 1;
-      //刷新一次
-      setPlayer();
-      return;
-    }
-
-    Log.d("播放结束");
-    // 遍历线路，如果全部链接都断开就是直播结束了
-    if (playUrls.length - 1 == currentLineIndex) {
-      liveStatus.value = false;
-    } else {
-      changePlayLine(currentLineIndex + 1);
-
-      //setPlayer();
-    }
-  }
-
-  int mediaErrorRetryCount = 0;
-  @override
-  Future<void> mediaError(String error) async {
-    super.mediaEnd();
-    if (mediaErrorRetryCount < 2) {
-      Log.d("播放失败，尝试第${mediaErrorRetryCount + 1}次刷新");
-      if (mediaErrorRetryCount == 1) {
-        //延迟一秒再刷新
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      mediaErrorRetryCount += 1;
-      //刷新一次
-      setPlayer();
-      return;
-    }
-
-    if (playUrls.length - 1 == currentLineIndex) {
-      errorMsg.value = "播放失败";
-      SmartDialog.showToast("播放失败:$error");
-    } else {
-      //currentLineIndex += 1;
-      //setPlayer();
-      changePlayLine(currentLineIndex + 1);
-    }
+    Log.d("播放链接：$playurl");
   }
 
   /// 读取SC
@@ -519,10 +442,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   }
 
   /// 移除掉已到期的SC
-  void removeSuperChat(LiveSuperChatMessage message) {
-    superChats.remove(message);
-  }
-
   Future<void> removeSuperChats() async {
     var now = DateTime.now().millisecondsSinceEpoch;
     superChats.value = superChats
@@ -662,7 +581,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
                 max: 100,
                 value: AppSettingsController.instance.playerVolume.value,
                 onChanged: (newValue) {
-                  player.volume = newValue / 100;
+                  player.setVolume(newValue);
                   AppSettingsController.instance.setPlayerVolume(newValue);
                 },
               ),
@@ -1015,8 +934,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     liveDanmaku = site.liveSite.getDanmaku();
 
     // 停止播放
-    player.state = PlaybackState.stopped;
-    player.waitFor(PlaybackState.stopped);
+    await player.stop();
 
     // 刷新信息
     loadData();

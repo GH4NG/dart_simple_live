@@ -18,6 +18,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:simple_live_app/widgets/superchat_card.dart';
 import 'dart:async';
 import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_app/modules/live_room/player/player_states.dart';
 
 Widget playerControls(BuildContext context, LiveRoomController controller) {
   return Stack(
@@ -29,6 +30,19 @@ Widget playerControls(BuildContext context, LiveRoomController controller) {
         return buildControls(context, controller);
       }),
       buildDanmuView(context, controller),
+      Center(
+        child: // 中间
+        StreamBuilder<PlayerState>(
+          stream: controller.player.stateStream,
+          initialData: controller.player.lastState,
+          builder: (_, snapshot) {
+            if (snapshot.data?.buffering == true) {
+              return const CircularProgressIndicator();
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
       // 左下角SC显示
       Obx(
         () => Visibility(
@@ -166,7 +180,7 @@ Widget buildFullControls(BuildContext context, LiveRoomController controller) {
                     ),
                   ),
                   Visibility(
-                    visible: Platform.isAndroid || Platform.isIOS,
+                    visible: Platform.isAndroid,
                     child: IconButton(
                       onPressed: () {
                         controller.enablePIP();
@@ -538,7 +552,7 @@ Widget buildControls(BuildContext context, LiveRoomController controller) {
                 Visibility(
                   visible: controller.fullScreenState.value,
                   child: Offstage(
-                    offstage: controller.isVertical.value,
+                    offstage: controller.player.lastState.isVertical ?? false,
                     child: TextButton(
                       onPressed: () {
                         controller.showQualitySheet();
@@ -558,7 +572,7 @@ Widget buildControls(BuildContext context, LiveRoomController controller) {
                 Visibility(
                   visible: controller.fullScreenState.value,
                   child: Offstage(
-                    offstage: controller.isVertical.value,
+                    offstage: controller.player.lastState.isVertical ?? false,
                     child: TextButton(
                       onPressed: () {
                         controller.showPlayUrlsSheet();
@@ -663,7 +677,7 @@ Widget buildDanmuView(BuildContext context, LiveRoomController controller) {
 }
 
 void showLinesInfo(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showPlayUrlsSheet();
     return;
   }
@@ -712,7 +726,7 @@ void showLinesInfo(LiveRoomController controller) {
 }
 
 void showQualitiesInfo(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showQualitySheet();
     return;
   }
@@ -741,7 +755,7 @@ void showQualitiesInfo(LiveRoomController controller) {
 }
 
 void showDanmakuSettings(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showDanmuSettingsSheet();
     return;
   }
@@ -759,7 +773,7 @@ void showDanmakuSettings(LiveRoomController controller) {
 }
 
 void showPlayerSettings(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showPlayerSettingsSheet();
     return;
   }
@@ -819,7 +833,7 @@ void showPlayerSettings(LiveRoomController controller) {
 }
 
 void showFollowUser(LiveRoomController controller) {
-  if (controller.isVertical.value) {
+  if (controller.player.lastState.isVertical ?? false) {
     controller.showFollowUserSheet();
     return;
   }

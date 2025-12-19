@@ -11,7 +11,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:fvp/fvp.dart' as fvp;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:simple_live_app/app/app_style.dart';
@@ -41,15 +40,6 @@ import 'package:simple_live_core/simple_live_core.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await MigrationService.migrateData();
-  fvp.registerWith(
-    options: {
-      'platforms': ['windows', 'macos', 'linux', 'android', 'ios'],
-      'lowLatency': 2,
-      'global': {
-        'log': 'off', // off, error, warning, info, debug, all(default)
-      },
-    },
-  );
   await Hive.initFlutter(
     (!Platform.isAndroid && !Platform.isIOS)
         ? (await getApplicationSupportDirectory()).path

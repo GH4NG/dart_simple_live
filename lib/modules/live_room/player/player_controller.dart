@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,9 +9,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:fvp/mdk.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:simple_live_app/app/event_bus.dart';
+import 'package:simple_live_app/modules/live_room/player/base_player.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
+import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
@@ -20,38 +20,25 @@ import 'package:simple_live_app/app/controller/base_controller.dart';
 import 'package:simple_live_app/app/custom_throttle.dart';
 import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/app/utils.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 mixin PlayerMixin {
+  GlobalKey globalPlayerKey = GlobalKey();
   GlobalKey globalDanmuKey = GlobalKey();
 
   /// 播放器实例
-  late final Player player = Player();
+  late BasePlayer player;
+
+  /// 播放器是否初始化完成
+  RxBool isPlayerInitialized = false.obs;
 
   /// 初始化播放器并设置参数
   Future<void> initializePlayer() async {
-    // 设置音频解码器
-    if (AppSettingsController.instance.customPlayerDecoder.value) {
-      player.setDecoders(
-        MediaType.audio,
-        [
-          AppSettingsController.instance.audioDecoder.value,
-        ],
-      );
-    }
-
-    // 设置视频解码器
-    if (AppSettingsController.instance.customPlayerDecoder.value) {
-      player.setDecoders(
-        MediaType.video,
-        [
-          AppSettingsController.instance.videoDecoder.value,
-        ],
-      );
-    }
-
-    player.setDecoders(MediaType.subtitle, []);
+    isPlayerInitialized.value = false;
+    await player.init();
+    isPlayerInitialized.value = true;
+    //设置音量
+    player.setVolume(AppSettingsController.instance.playerVolume.value);
   }
 }
 
@@ -105,7 +92,7 @@ mixin PlayerStateMixin on PlayerMixin {
   Timer? hideSeekTipTimer;
 
   /// 是否为竖屏直播间
-  var isVertical = false.obs;
+  // var isVertical = false.obs;
 
   /// 是否自动全屏
   bool autoFullScreen = false;
@@ -180,15 +167,15 @@ mixin PlayerStateMixin on PlayerMixin {
 
 mixin PlayerDanmakuMixin on PlayerStateMixin {
   /// 弹幕控制器
-  late DanmakuController? danmakuController;
+  DanmakuController? danmakuController;
 
   void initDanmakuController(DanmakuController e) {
     danmakuController = e;
   }
 
   void updateDanmuOption(DanmakuOption? option) {
-    if (option == null) return;
-    danmakuController?.updateOption(option);
+    if (danmakuController == null || option == null) return;
+    danmakuController!.updateOption(option);
   }
 
   void disposeDanmakuController() {
@@ -207,15 +194,14 @@ mixin PlayerDanmakuMixin on PlayerStateMixin {
 
 mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
   final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-  final screenBrightness = ScreenBrightness();
-  final VolumeController volumeController = VolumeController.instance;
+
   final pip = Floating();
   StreamSubscription<PiPStatus>? _pipSubscription;
 
   /// 初始化一些系统状态
   Future<void> initSystem() async {
     if (Platform.isAndroid || Platform.isIOS) {
-      volumeController.showSystemUI = false;
+      VolumeController.instance.showSystemUI = false;
     }
 
     // 屏幕常亮
@@ -248,8 +234,6 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         Log.logPrint(e);
       }
     }
-
-    await WakelockPlus.disable();
   }
 
   /// 进入全屏
@@ -262,8 +246,11 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         overlays: [],
       );
 
-      if (!isVertical.value) {
-        //横屏
+      if (player.lastState.isVertical ?? false) {
+        //竖屏视频保持竖屏方向
+        await setPortraitOrientation();
+      } else {
+        //横屏视频切换为横屏
         await setLandscapeOrientation();
       }
     } else {
@@ -317,15 +304,15 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
 
       windowManager.setTitleBarStyle(TitleBarStyle.hidden);
       // 获取视频窗口大小
-      var videoWidth = width.value;
-      var videoHeight = height.value;
+      var width = player.lastState.width;
+      var height = player.lastState.height;
 
       // 横屏还是竖屏
-      if (videoHeight > videoWidth) {
-        var aspectRatio = videoWidth / videoHeight;
+      if (height! > width!) {
+        var aspectRatio = width / height;
         windowManager.setSize(Size(400, 400 / aspectRatio));
       } else {
-        var aspectRatio = videoHeight / videoWidth;
+        var aspectRatio = height / width;
         windowManager.setSize(Size(280 / aspectRatio, 280));
       }
 
@@ -391,30 +378,12 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         return;
       }
 
-      Uint8List? rgbaData = await player.snapshot();
-      if (rgbaData == null) {
+      Uint8List? pngBytes = await player.snapshot();
+      if (pngBytes == null) {
         SmartDialog.showToast("截图失败,数据为空");
         SmartDialog.dismiss(status: SmartStatus.loading);
         return;
       }
-
-      final completer = Completer<ui.Image>();
-      ui.decodeImageFromPixels(
-        rgbaData,
-        width.value,
-        height.value,
-        ui.PixelFormat.rgba8888,
-        completer.complete,
-      );
-      final ui.Image image = await completer.future;
-
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) {
-        SmartDialog.showToast("截图转换失败");
-        SmartDialog.dismiss(status: SmartStatus.loading);
-        return;
-      }
-      final pngBytes = byteData.buffer.asUint8List();
 
       if (Platform.isIOS || Platform.isAndroid) {
         await ImageGallerySaverPlus.saveImage(
@@ -467,13 +436,15 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
     showControlsState.value = false;
 
     //监听事件
-    var videoWidth = width.value;
-    var videoHeight = height.value;
+    var width = player.lastState.width;
+    var height = player.lastState.height;
     Rational ratio = const Rational.landscape();
-    if (videoHeight > videoWidth) {
-      ratio = const Rational.vertical();
-    } else {
-      ratio = const Rational.landscape();
+    if (width != null && height != null) {
+      if (height > width) {
+        ratio = const Rational.vertical();
+      } else {
+        ratio = const Rational.landscape();
+      }
     }
     await pip.enable(
       ImmediatePiP(
@@ -583,7 +554,7 @@ mixin PlayerGestureControlMixin
       showGestureTip.value = true;
     }
     if (Platform.isAndroid || Platform.isIOS) {
-      _currentVolume = await volumeController.getVolume();
+      _currentVolume = await VolumeController.instance.getVolume();
     }
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       _currentBrightness = await ScreenBrightness.instance.application;
@@ -647,7 +618,7 @@ mixin PlayerGestureControlMixin
 
   Future _realSetVolume(int volume) async {
     Log.logPrint(volume);
-    volumeController.setVolume(volume / 100);
+    VolumeController.instance.setVolume(volume / 100);
   }
 
   void setGestureBrightness(double dy) {
@@ -695,246 +666,103 @@ class PlayerController extends BaseController
         PlayerDanmakuMixin,
         PlayerSystemMixin,
         PlayerGestureControlMixin {
-  String videoDecoderName = "";
-  String audioDecoderName = "";
-
   @override
   void onInit() {
+    if (AppSettingsController.instance.playerType.value == 0) {
+      player = LibMPV();
+    } else if (AppSettingsController.instance.playerType.value == 1) {
+      player = LibMDK();
+    } else {
+      player = LibMPV();
+    }
     initSystem();
-    initStream();
     //设置音量
-    player.volume = AppSettingsController.instance.playerVolume.value / 100.0;
+    player.setVolume(AppSettingsController.instance.playerVolume.value);
+
     super.onInit();
   }
 
-  StreamSubscription? _escSubscription;
-
-  void initStream() {
-    int lastBufferProgress = 0;
-
-    player
-      ..onEvent((MediaEvent event) {
-        if (event.error < 0) {
-          errorMsg.value = event.error.toString();
-          Log.d(
-            "播放器错误: ${event.error}, 详情: ${event.category}-${event.detail}",
-          );
-          mediaError(event.error.toString());
-          return;
-        }
-
-        switch (event.category) {
-          case "render.video":
-            if (event.detail == "1st_frame") {
-              Log.d("首帧已渲染");
-            }
-            break;
-
-          case "decoder.audio":
-          case "decoder.video":
-            if (event.detail == "open" && event.error < 0) {
-              Log.d("解码器打开失败: ${event.category}, stream=${event.detail}");
-            } else if (event.error == 0) {
-              Log.d("解码器已打开: ${event.category}, name=${event.detail}");
-              if (event.category == "decoder.video") {
-                videoDecoderName = event.detail;
-              } else {
-                audioDecoderName = event.detail;
-              }
-            }
-            break;
-
-          case "video":
-            if (event.detail != "size") break;
-            Log.d("视频帧大小变化");
-
-            final codec = player.mediaInfo.video?.firstOrNull?.codec;
-            if (codec == null) {
-              Log.d("未获取到视频编码信息");
-              break;
-            }
-
-            width.value = codec.width;
-            height.value = codec.height;
-            isVertical.value = height.value > width.value;
-
-            Log.d(
-              "视频宽: ${codec.width}, 高: ${codec.height}, 帧率: ${codec.frameRate}",
-            );
-
-            if (autoFullScreen) {
-              enterFullScreen();
-            }
-            break;
-
-          case "reader.buffering":
-            final progress = event.error.toInt();
-            if (progress < lastBufferProgress) lastBufferProgress = 0;
-            if (progress - lastBufferProgress >= 20 || progress == 100) {
-              lastBufferProgress = (progress ~/ 20) * 20;
-              Log.d("缓冲进度: $lastBufferProgress%");
-            }
-            break;
-
-          case "thread.audio":
-          case "thread.video":
-            Log.d(
-              "线程事件: ${event.category}, 状态=${event.error == 1 ? "启动" : "退出"}",
-            );
-            break;
-
-          case "snapshot":
-            Log.d(
-              event.error == 0
-                  ? "截图成功: ${event.detail}"
-                  : "截图失败: ${event.detail}",
-            );
-            break;
-
-          case "metadata":
-            Log.d("元数据已更新");
-            break;
-
-          default:
-            Log.d(
-              "未知事件: ${event.category}, 详情: ${event.detail}, 错误码: ${event.error}",
-            );
-            break;
-        }
-      })
-      ..onStateChanged((oldState, newState) {
-        Log.d("播放状态变化: $oldState → $newState");
-        if (newState == PlaybackState.playing) {
-          WakelockPlus.enable();
-        } else {
-          WakelockPlus.disable();
-        }
-      });
-
-    _escSubscription = EventBus.instance.listen(EventBus.kEscapePressed, (_) {
-      exitFull();
-    });
-  }
+  StreamSubscription<PlayerState>? _stateSubscription;
 
   void disposeStream() {
+    _stateSubscription?.cancel();
     _pipSubscription?.cancel();
-    _escSubscription?.cancel();
-  }
-
-  void mediaEnd() {
-    WakelockPlus.disable();
-  }
-
-  void mediaError(String error) {
-    WakelockPlus.disable();
   }
 
   void showDebugInfo() {
-    final mediaInfo = player.mediaInfo;
     Utils.showBottomSheet(
       title: "播放信息",
       child: ListView(
         children: [
           ListTile(
-            title: const Text("解码器信息"),
+            title: const Text("Resolution"),
             subtitle: Text(
-              '视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-              '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}',
+              '${player.lastState.width}x${player.lastState.height} ${player.lastState.fps}fps',
             ),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
                   text:
-                      '解码器信息\n视频解码器: ${videoDecoderName.isNotEmpty ? videoDecoderName : "未知"}\n'
-                      '音频解码器: ${audioDecoderName.isNotEmpty ? audioDecoderName : "未知"}',
+                      '${player.lastState.width}x${player.lastState.height} ${player.lastState.fps}fps',
                 ),
               );
             },
           ),
           ListTile(
-            title: const Text("分辨率"),
-            subtitle: Text(
-              '${width.value}x${height.value} ${mediaInfo.video?[0].codec.frameRate}FPS',
-            ),
+            title: const Text("VideoParams"),
+            subtitle: Text(player.lastState.videoParams),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
-                  text:
-                      '分辨率\n${width.value}x${height.value} ${mediaInfo.video?[0].codec.frameRate}FPS',
+                  text: "VideoParams\n${player.lastState.videoParams}",
                 ),
               );
             },
           ),
           ListTile(
-            title: const Text("媒体信息"),
-            subtitle: Text(
-              '时长: ${mediaInfo.duration} ms\n'
-              '码率: ${mediaInfo.bitRate}\n'
-              '格式: ${mediaInfo.format}\n'
-              '流数量: ${mediaInfo.streams}',
-            ),
+            title: const Text("AudioParams"),
+            subtitle: Text(player.lastState.audioParams),
             onLongPress: () {
               Clipboard.setData(
                 ClipboardData(
-                  text:
-                      '媒体信息\n时长: ${mediaInfo.duration} ms\n码率: ${mediaInfo.bitRate}\n格式: ${mediaInfo.format}\n流数量: ${mediaInfo.streams}',
+                  text: "AudioParams\n${player.lastState.audioParams}",
                 ),
               );
             },
           ),
-          // 视频轨道
-          if (mediaInfo.video != null)
-            ...mediaInfo.video!.map(
-              (v) => ListTile(
-                title: Text("视频轨道 #${v.index}"),
-                subtitle: Text(
-                  v.toString(),
+          ListTile(
+            title: const Text("VideoTrack"),
+            subtitle: Text(player.lastState.videoTrack),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(
+                  text: "VideoTrack\n${player.lastState.videoTrack}",
                 ),
-                onLongPress: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: "视频轨道 #${v.index}\n${v.toString()}",
-                    ),
-                  );
-                },
-              ),
-            ),
-          // 音频轨道
-          if (mediaInfo.audio != null)
-            ...mediaInfo.audio!.map(
-              (a) => ListTile(
-                title: Text("音频轨道 #${a.index}"),
-                subtitle: Text(
-                  a.toString(),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("AudioTrack"),
+            subtitle: Text(player.lastState.audioTrack),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(
+                  text: "AudioTrack\n${player.lastState.audioTrack}",
                 ),
-                onLongPress: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: "音频轨道 #${a.index}\n${a.toString()}",
-                    ),
-                  );
-                },
-              ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text("Source"),
+            subtitle: Text(
+              player.lastState.playlist.first,
             ),
-
-          // Metadata
-          if (mediaInfo.metadata.isNotEmpty)
-            ListTile(
-              title: const Text("元数据"),
-              subtitle: Text(
-                mediaInfo.metadata.entries
-                    .map((e) => "${e.key}: ${e.value}")
-                    .join("\n"),
-              ),
-              onLongPress: () {
-                Clipboard.setData(
-                  ClipboardData(
-                    text:
-                        "元数据\n${mediaInfo.metadata.entries.map((e) => "${e.key}: ${e.value}").join("\n")}",
-                  ),
-                );
-              },
-            ),
+            onLongPress: () {
+              Clipboard.setData(
+                ClipboardData(text: player.lastState.playlist.first),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -942,14 +770,13 @@ class PlayerController extends BaseController
 
   @override
   Future<void> onClose() async {
-    Log.w("播放器关闭");
     if (smallWindowState.value) {
       exitSmallWindow();
     }
     disposeStream();
     disposeDanmakuController();
     await resetSystem();
-    player.dispose();
+    await player.dispose();
     super.onClose();
   }
 }

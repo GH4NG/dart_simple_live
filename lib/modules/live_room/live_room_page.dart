@@ -11,7 +11,6 @@ import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/modules/live_room/live_room_controller.dart';
-import 'package:simple_live_app/modules/live_room/player/player_controls.dart';
 import 'package:simple_live_app/services/follow_service.dart';
 import 'package:simple_live_app/widgets/desktop_refresh_button.dart';
 import 'package:simple_live_app/widgets/follow_user_item.dart';
@@ -88,11 +87,13 @@ class LiveRoomPage extends GetView<LiveRoomController> {
         if (controller.fullScreenState.value) {
           return PopScope(
             canPop: false,
-            onPopInvokedWithResult: (didPop, result) async {
-              if (didPop) return;
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop) {
+                controller.exitFull();
+              }
             },
             child: Scaffold(
-              body: buildMediaPlayer(context),
+              body: buildMediaPlayer(),
             ),
           );
         } else {
@@ -106,7 +107,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
     return PiPSwitcher(
       floating: controller.pip,
       childWhenDisabled: page,
-      childWhenEnabled: buildMediaPlayer(context),
+      childWhenEnabled: buildMediaPlayer(),
     );
   }
 
@@ -133,7 +134,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
       children: [
         AspectRatio(
           aspectRatio: 16 / 9,
-          child: buildMediaPlayer(context),
+          child: buildMediaPlayer(),
         ),
         buildUserProfile(context),
         buildMessageArea(),
@@ -149,7 +150,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
           child: Row(
             children: [
               Expanded(
-                child: buildMediaPlayer(context),
+                child: buildMediaPlayer(),
               ),
               SizedBox(
                 width: 300,
@@ -251,125 +252,60 @@ class LiveRoomPage extends GetView<LiveRoomController> {
     );
   }
 
-  Widget buildMediaPlayer(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final maxHeight = constraints.maxHeight;
+  Widget buildMediaPlayer() {
+    return Obx(() {
+      var boxFit = BoxFit.contain;
+      double? aspectRatio;
+      switch (AppSettingsController.instance.scaleMode.value) {
+        case 0:
+          boxFit = BoxFit.contain;
+          break;
+        case 1:
+          boxFit = BoxFit.fill;
+          break;
+        case 2:
+          boxFit = BoxFit.cover;
+          break;
+        case 3:
+          boxFit = BoxFit.contain;
+          aspectRatio = 16 / 9;
+          break;
+        case 4:
+          boxFit = BoxFit.contain;
+          aspectRatio = 4 / 3;
+          break;
+        default:
+          boxFit = BoxFit.contain;
+      }
 
-        return Obx(() {
-          final scaleMode = AppSettingsController.instance.scaleMode.value;
-
-          final videoW = (controller.width.value > 0)
-              ? controller.width.value.toDouble()
-              : 16.0;
-          final videoH = (controller.height.value > 0)
-              ? controller.height.value.toDouble()
-              : 9.0;
-
-          final parentAspect = maxWidth / maxHeight;
-          final videoAspect = videoW / videoH;
-
-          double displayWidth = maxWidth;
-          double displayHeight = maxHeight;
-          BoxFit boxFit = BoxFit.contain;
-
-          switch (scaleMode) {
-            case 0: // 适应
-              boxFit = BoxFit.contain;
-              break;
-            case 1: // 拉伸
-              boxFit = BoxFit.fill;
-              break;
-            case 2: // 铺满
-              boxFit = BoxFit.contain;
-              double scale = parentAspect > videoAspect
-                  ? maxWidth / videoW
-                  : maxHeight / videoH;
-              displayWidth = (videoW * scale).clamp(0, maxWidth);
-              displayHeight = (videoH * scale).clamp(0, maxHeight);
-              break;
-            case 3: // 16:9
-              boxFit = BoxFit.none;
-              const targetAspect = 16 / 9;
-              if (parentAspect > targetAspect) {
-                displayHeight = maxHeight;
-                displayWidth = displayHeight * targetAspect;
-              } else {
-                displayWidth = maxWidth;
-                displayHeight = displayWidth / targetAspect;
-              }
-              break;
-            case 4: // 4:3
-              boxFit = BoxFit.none;
-              const targetAspect = 4 / 3;
-              if (parentAspect > targetAspect) {
-                displayHeight = maxHeight;
-                displayWidth = displayHeight * targetAspect;
-              } else {
-                displayWidth = maxWidth;
-                displayHeight = displayWidth / targetAspect;
-              }
-              break;
-          }
-          Widget buildVideo(int id) {
-            if (scaleMode == 3 || scaleMode == 4) {
-              return SizedBox(
-                width: displayWidth,
-                height: displayHeight,
-                child: Texture(
-                  textureId: id,
-                  filterQuality: FilterQuality.medium,
-                ),
-              );
-            } else {
-              return SizedBox(
-                width: displayWidth,
-                height: displayHeight,
-                child: FittedBox(
-                  fit: boxFit,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: videoW,
-                    height: videoH,
-                    child: Texture(
-                      textureId: id,
-                      filterQuality: FilterQuality.medium,
-                    ),
-                  ),
-                ),
-              );
+      return Stack(
+        children: [
+          Container(color: Colors.black),
+          Obx(() {
+            if (!controller.isPlayerInitialized.value) {
+              return const SizedBox();
             }
-          }
-
-          return Stack(
-            children: [
-              Container(color: Colors.black),
-              Center(
-                child: ValueListenableBuilder<int?>(
-                  valueListenable: controller.player.textureId,
-                  builder: (_, id, _) => id == null
-                      ? const CircularProgressIndicator()
-                      : buildVideo(id),
+            return controller.player.videoWidget(
+                  const Key("live_player"),
+                  aspectRatio,
+                  boxFit,
+                ) ??
+                const SizedBox();
+          }),
+          Obx(
+            () => Visibility(
+              visible: !controller.liveStatus.value,
+              child: const Center(
+                child: Text(
+                  "未开播",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
-              playerControls(context, controller),
-              Obx(
-                () => Visibility(
-                  visible: !controller.liveStatus.value,
-                  child: const Center(
-                    child: Text(
-                      "未开播",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        });
-      },
-    );
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Widget buildUserProfile(BuildContext context) {
@@ -742,7 +678,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
             return SuperChatCard(
               item,
               onExpire: () {
-                controller.removeSuperChat(item);
+                controller.removeSuperChats();
               },
             );
           },

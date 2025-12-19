@@ -12,8 +12,23 @@ class AppSettingsController extends GetxController {
   static AppSettingsController get instance =>
       Get.find<AppSettingsController>();
 
+  /// 可选播放器日志等级
+  /// LogLevel 0: 错误 1: 警告 2: 简略 3: 详细 4: 调试（隐藏） 5: 全部（隐藏）
+  static const Map<int, String> playerLogLevelMap = {
+    0: "错误",
+    1: "警告",
+    2: "简略",
+    3: "详细",
+    // 以下两个级别被MPV官方支持，但是输出内容过于冗长，暂时隐藏
+    // 4: "调试",
+    // 5: "全部",
+  };
+
   /// 缩放模式
   RxInt scaleMode = 0.obs;
+
+  /// 播放器类型 0: MPV, 1: MDK
+  RxInt playerType = 0.obs;
 
   var themeMode = 0.obs;
 
@@ -144,6 +159,11 @@ class AppSettingsController extends GetxController {
       0,
     );
 
+    playerType.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerType,
+      0,
+    );
+
     playerVolume.value = LocalStorageService.instance.getValue(
       LocalStorageService.kPlayerVolume,
       100.0,
@@ -180,6 +200,17 @@ class AppSettingsController extends GetxController {
     if (logEnable.value) {
       Log.initWriter();
     }
+
+    playerLogEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerLogEnable,
+      false,
+    );
+
+    playerLogLevel.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerLogLevel,
+      0,
+    );
+
     customPlayerOutput.value = LocalStorageService.instance.getValue(
       LocalStorageService.kCustomPlayerOutput,
       false,
@@ -215,6 +246,11 @@ class AppSettingsController extends GetxController {
       false,
     );
 
+    mdkAndroidTunnel.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kMdkAndroidTunnel,
+      false,
+    );
+
     videoDecoder.value = LocalStorageService.instance.getValue(
       LocalStorageService.kVideoDecoder,
       "FFmpeg",
@@ -247,7 +283,7 @@ class AppSettingsController extends GetxController {
 
     initSiteSort();
     initHomeSort();
-
+    initDecoders();
     super.onInit();
   }
 
@@ -533,6 +569,25 @@ class AppSettingsController extends GetxController {
     );
   }
 
+  void setPlayerType(int value) {
+    playerType.value = value;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerType,
+      value,
+    );
+  }
+
+  void setThemeMode(int value) {
+    themeMode.value = value;
+    var mode = ThemeMode.values[value];
+
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kThemeMode,
+      value,
+    );
+    Get.changeThemeMode(mode);
+  }
+
   RxList<String> siteSort = RxList<String>();
   void setSiteSort(List<String> e) {
     siteSort.value = e;
@@ -611,6 +666,24 @@ class AppSettingsController extends GetxController {
     LocalStorageService.instance.setValue(LocalStorageService.kLogEnable, e);
   }
 
+  var playerLogEnable = false.obs;
+  void setPlayerLogEnable(bool e) {
+    playerLogEnable.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerLogEnable,
+      e,
+    );
+  }
+
+  var playerLogLevel = 0.obs;
+  void setPlayerLogLevel(int e) {
+    playerLogLevel.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerLogLevel,
+      e,
+    );
+  }
+
   var customPlayerOutput = false.obs;
   void setCustomPlayerOutput(bool e) {
     customPlayerOutput.value = e;
@@ -652,6 +725,15 @@ class AppSettingsController extends GetxController {
     customPlayerDecoder.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kCustomPlayerDecoder,
+      e,
+    );
+  }
+
+  var mdkAndroidTunnel = false.obs;
+  void setMdkAndroidTunnel(bool e) {
+    mdkAndroidTunnel.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kMdkAndroidTunnel,
       e,
     );
   }
@@ -702,5 +784,140 @@ class AppSettingsController extends GetxController {
       LocalStorageService.kPlayerForceHttps,
       e,
     );
+  }
+
+  var videoDecoders = <String, String>{}.obs;
+  var audioDecoders = <String, String>{}.obs;
+
+  var videoOutputs = <String, String>{}.obs;
+  var audioOutputs = <String, String>{}.obs;
+  var hardwareDecoders = <String, String>{}.obs;
+
+  void initDecoders() {
+    videoDecoders.value = {
+      "FFmpeg": "FFmpeg (通用软件解码器)",
+    };
+
+    if (Platform.isWindows) {
+      videoDecoders.addAll({
+        "MFT:d3d=11": "MFT (D3D11)",
+        "MFT:d3d=12": "MFT (D3D12)",
+        "MFT": "MFT (Auto)",
+        "D3D11": "D3D11",
+        "D3D12": "D3D12",
+        "DXVA": "DXVA",
+        "CUDA": "CUDA",
+        "NVDEC": "NVDEC",
+        "QSV": "QSV",
+        "dav1d": "dav1d (AV1)",
+        "hap": "hap",
+        "R3D": "R3D",
+        "BRAW": "BRAW",
+      });
+    } else if (Platform.isMacOS || Platform.isIOS) {
+      videoDecoders.addAll({
+        "VT": "VT (VideoToolbox)",
+        "VideoToolbox": "VideoToolbox",
+        "dav1d": "dav1d (AV1)",
+        "hap": "hap",
+        "R3D": "R3D",
+        "BRAW": "BRAW",
+      });
+    } else if (Platform.isAndroid) {
+      videoDecoders.addAll({
+        "AMediaCodec": "AMediaCodec",
+        "MediaCodec": "MediaCodec",
+        "dav1d": "dav1d (AV1)",
+      });
+    } else if (Platform.isLinux) {
+      videoDecoders.addAll({
+        "VAAPI": "VAAPI",
+        "VDPAU": "VDPAU",
+        "CUDA": "CUDA",
+        "NVDEC": "NVDEC",
+        "V4L2M2M": "V4L2M2M",
+        "rkmpp": "rkmpp (RockChip)",
+        "MMAL": "MMAL (Raspberry Pi)",
+        "CedarX": "CedarX (Allwinner)",
+        "dav1d": "dav1d (AV1)",
+        "hap": "hap",
+      });
+    }
+
+    audioDecoders.value = {
+      "FFmpeg": "FFmpeg (通用音频解码器)",
+      "MFT": Platform.isWindows ? "Windows MFT" : "",
+      "AMediaCodec": Platform.isAndroid ? "Android AMediaCodec" : "",
+    }..removeWhere((key, value) => value.isEmpty);
+
+    videoOutputs.value = {
+      "gpu": "gpu",
+      "gpu-next": "gpu-next",
+      "xv": "xv (X11 only)",
+      "x11": "x11 (X11 only)",
+      "vdpau": "vdpau (X11 only)",
+      "direct3d": "direct3d (Windows only)",
+      "sdl": "sdl",
+      "dmabuf-wayland": "dmabuf-wayland",
+      "vaapi": "vaapi",
+      "null": "null",
+      "libmpv": "libmpv",
+      "mediacodec_embed": "mediacodec_embed (Android only)",
+    };
+
+    audioOutputs.value = {
+      "auto": "auto (Not available)",
+      "null": "null (No audio output)",
+      "pulse": "pulse (Linux, uses PulseAudio)",
+      "pipewire": "pipewire (Linux, via Pulse compatibility or native)",
+      "alsa": "alsa (Linux only)",
+      "oss": "oss (Linux only)",
+      "jack": "jack (Linux/macOS, low-latency audio)",
+      "directsound": "directsound (Windows only)",
+      "wasapi": "wasapi (Windows only)",
+      "winmm": "winmm (Windows only, legacy API)",
+      "audiounit": "audiounit (iOS only)",
+      "coreaudio": "coreaudio (macOS only)",
+      "opensles": "opensles (Android only)",
+      "audiotrack": "audiotrack (Android only)",
+      "aaudio": "aaudio (Android only)",
+      "pcm": "pcm (Cross-platform)",
+      "sdl": "sdl (Cross-platform, via SDL library)",
+      "openal": "openal (Cross-platform, OpenAL backend)",
+      "libao": "libao (Cross-platform, uses libao library)",
+    };
+
+    hardwareDecoders.value = {
+      'auto': '启用任意可用解码器',
+      'auto-safe': '启用最佳解码器',
+      'auto-copy': '启用带拷贝功能的最佳解码器',
+      'd3d11va': 'DirectX11 (windows8 及以上)',
+      'd3d11va-copy': 'DirectX11 (windows8 及以上) (非直通)',
+      'videotoolbox': 'VideoToolbox (macOS / iOS)',
+      'videotoolbox-copy': 'VideoToolbox (macOS / iOS) (非直通)',
+      'vaapi': 'VAAPI (Linux)',
+      'vaapi-copy': 'VAAPI (Linux) (非直通)',
+      'nvdec': 'NVDEC (NVIDIA独占)',
+      'nvdec-copy': 'NVDEC (NVIDIA独占) (非直通)',
+      'drm': 'DRM (Linux)',
+      'drm-copy': 'DRM (Linux) (非直通)',
+      'vulkan': 'Vulkan (全平台) (实验性)',
+      'vulkan-copy': 'Vulkan (全平台) (实验性) (非直通)',
+      'dxva2': 'DXVA2 (Windows7 及以上)',
+      'dxva2-copy': 'DXVA2 (Windows7 及以上) (非直通)',
+      'vdpau': 'VDPAU (Linux)',
+      'vdpau-copy': 'VDPAU (Linux) (非直通)',
+      'mediacodec': 'MediaCodec (Android)',
+      'mediacodec-copy': 'MediaCodec (Android) (非直通)',
+      'cuda': 'CUDA (NVIDIA独占) (过时)',
+      'cuda-copy': 'CUDA (NVIDIA独占) (过时) (非直通)',
+      'crystalhd': 'CrystalHD (全平台) (过时)',
+      'rkmpp': 'Rockchip MPP (仅部分Rockchip芯片)',
+    };
+
+    String savedDecoder = videoDecoder.value;
+    if (!videoDecoders.containsKey(savedDecoder)) {
+      setVideoDecoder("FFmpeg");
+    }
   }
 }

@@ -154,13 +154,24 @@ class MinePage extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Remix.play_circle_line),
-                  title: const Text("直播设置"),
+                  title: const Text("直播间设置"),
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: Colors.grey,
                   ),
                   onTap: () {
                     Get.toNamed(RoutePath.kSettingsPlay);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.video_settings_outlined),
+                  title: const Text("播放器设置"),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey,
+                  ),
+                  onTap: () {
+                    Get.toNamed(RoutePath.kSettingsPlayer);
                   },
                 ),
                 ListTile(

@@ -42,6 +42,7 @@ import 'package:simple_live_app/modules/settings/indexed_settings/indexed_settin
 import 'package:simple_live_app/modules/settings/other/other_settings_controller.dart';
 import 'package:simple_live_app/modules/settings/other/other_settings_page.dart';
 import 'package:simple_live_app/modules/settings/play_settings_page.dart';
+import 'package:simple_live_app/modules/settings/player_settings_page.dart';
 import 'package:simple_live_app/modules/test/test_page.dart';
 import 'package:simple_live_app/modules/follow_user/follow_info_setting/follow_info_controller.dart';
 import 'package:simple_live_app/modules/follow_user/follow_info_setting/follow_info_page.dart';
@@ -121,6 +122,11 @@ class AppPages {
     GetPage(
       name: RoutePath.kSettingsPlay,
       page: () => const PlaySettingsPage(),
+    ),
+    //播放器设置
+    GetPage(
+      name: RoutePath.kSettingsPlayer,
+      page: () => const PlayerSettingsPage(),
     ),
     //自动关闭
     GetPage(

@@ -11,6 +11,9 @@ class LocalStorageService extends GetxService {
   /// 缩放模式
   static const String kPlayerScaleMode = "ScaleMode";
 
+  /// 播放器类型
+  static const String kPlayerType = "PlayerType";
+
   /// 网站排序
   static const String kSiteSort = "SiteSort";
 
@@ -135,6 +138,12 @@ class LocalStorageService extends GetxService {
   /// 日志记录
   static const String kLogEnable = "LogEnable";
 
+  /// 开启播放器日志记录
+  static const String kPlayerLogEnable = "PlayerLogEnable";
+
+  /// 播放器日志等级
+  static const String kPlayerLogLevel = "PlayerLogLevel";
+
   /// 开启自定义播放器视频输出
   static const String kCustomPlayerOutput = "CustomPlayerOutput";
 
@@ -149,6 +158,9 @@ class LocalStorageService extends GetxService {
 
   /// 开启自定义播放器解码器
   static const String kCustomPlayerDecoder = "CustomPlayerDecoder";
+
+  /// MDK Android Tunnel 模式
+  static const String kMdkAndroidTunnel = "MdkAndroidTunnel";
 
   /// 视频解码器
   static const String kVideoDecoder = "VideoDecoder";

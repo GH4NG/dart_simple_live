@@ -108,7 +108,8 @@ jobs:
                 include:
                     - platform: linux
                       os: ubuntu-latest
-                      targets: deb,zip,appimage
+                      # targets: deb,zip,appimage
+                      targets: deb,zip
                     - platform: windows
                       os: windows-2022
                       targets: exe,msix,zip
