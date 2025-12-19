@@ -1,6 +1,20 @@
 # Changelog
 
 <details>
+<summary>v1.8.1219</summary>
+
+### 功能
+
+-   同步上游代码
+-   同时支持 MPV 和 MDK 播放器
+
+### 修复
+
+-   虎牙 UA
+
+</details>
+
+<details>
 <summary>v1.8.1030</summary>
 
 ### 功能
