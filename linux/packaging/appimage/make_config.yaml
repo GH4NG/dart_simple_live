@@ -1,0 +1,15 @@
+display_name: Simple Live
+
+icon: assets/logo.png
+
+keywords:
+    - Simple Live
+
+generic_name: Simple Live
+
+categories:
+    - AudioVideo
+
+startup_notify: true
+
+include: []

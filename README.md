@@ -43,31 +43,22 @@
 ## APP 支持平台
 
 -   [x] Android
--   [x] iOS `自测`
+-   [x] iOS
 -   [x] Windows
--   [x] MacOS `自测`
--   [x] Linux `自测`
--   [x] Android TV `请自行打包` [说明](https://github.com/SlotSun/dart_simple_live/issues/4)
+-   [x] MacOS
+-   [x] Linux
+-   [x] Android TV
 
 > 想体验最新功能，可前往 [Actions](https://github.com/GH4NG/dart_simple_live/actions) 下载自动打包的开发版本。
 > Windows 用户推荐下载 UWP 版 [聚合直播](https://www.microsoft.com/store/apps/9N1TWG2G84VD) 以获得更好体验。
 
 ---
 
-## 项目结构
-
--   `simple_live_core`：核心库，实现获取各个网站的信息及弹幕。
--   `simple_live_console`：基于核心库的控制台程序。
--   `simple_live_app`：Flutter APP 客户端。
--   `simple_live_tv_app`：Flutter Android TV 客户端。
-
----
-
 ## 💻 环境
 
 ```bash
-[√] Flutter (Channel stable, 3.35.7, on Microsoft Windows 10, locale zh-CN)
-[√] Flutter (Channel stable, 3.35.7, on macOS 14.8.1 23J30 darwin-x64, locale zh-Hans-CN)
+[√] Flutter (Channel stable, 3.38.3, on Microsoft Windows 10, locale zh-CN)
+[√] Flutter (Channel stable, 3.38.3, on macOS 14.8.1 23J30 darwin-x64, locale zh-Hans-CN)
 [√] Android toolchain - develop for Android devices (SDK 36.0.0)
 [√] Xcode - develop for iOS and macOS (Xcode 16.1)
 [√] Chrome - develop for the webs
@@ -86,6 +77,8 @@
 
 [dart_tars_protocol](https://github.com/xiaoyaocz/dart_tars_protocol.git)
 
+[wbt5/real-url](https://github.com/wbt5/real-url)
+
 [lovelyyoshino/Bilibili-Live-API](https://github.com/lovelyyoshino/Bilibili-Live-API/blob/master/API.WebSocket.md)
 
 [IsoaSFlus/danmaku](https://github.com/IsoaSFlus/danmaku)
@@ -94,8 +87,18 @@
 
 [TarsCloud/Tars](https://github.com/TarsCloud/Tars)
 
+[YunzhiYike/douyin-live](https://github.com/YunzhiYike/douyin-live)
+
 [5ime/Tiktok_Signature](https://github.com/5ime/Tiktok_Signature)
 
 [biliup](https://github.com/biliup/biliup)
 
 [stream-rec](https://github.com/stream-rec/stream-rec)
+
+## 声明
+
+本项目的所有功能都是基于互联网上公开的资料开发，无任何破解、逆向工程等行为。
+
+本项目仅用于学习交流编程技术，严禁将本项目用于商业目的。如有任何商业行为，均与本项目无关。
+
+如果本项目存在侵犯您的合法权益的情况，请及时与开发者联系，开发者将会及时删除有关内容。

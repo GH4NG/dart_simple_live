@@ -1,0 +1,32 @@
+name: simple_live_core
+version: 1.0.4
+description: '聚合直播核心库'
+repository: https://github.com/xiaoyaocz/dart_simple_live
+publish_to: 'none'
+environment:
+    sdk: '>=3.10.0'
+
+dependencies:
+    flutter:
+        sdk: flutter
+    dio: ^5.9.0
+    logger: ^2.6.2
+    web_socket_channel: ^3.0.3
+    html_unescape: ^2.0.0
+    protobuf: ^4.2.0
+    crypto: ^3.0.6
+    brotli: ^0.6.0
+    tars_flutter:
+        git:
+            url: https://github.com/dbjiasb/TarsFlutter.git
+            ref: main
+    fixnum: ^1.1.1
+    dart_quickjs:
+        git:
+            url: https://github.com/xiaoyaocz/dart_quickjs
+            ref: main
+
+dev_dependencies:
+    flutter_lints: ^6.0.0
+    flutter_test:
+        sdk: flutter

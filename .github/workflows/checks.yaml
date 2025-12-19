@@ -1,0 +1,42 @@
+name: Flutter checks
+
+on:
+    pull_request:
+        branches:
+            - dev
+    workflow_dispatch:
+
+jobs:
+    linting:
+        name: Linting & Formatting
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4.1.1
+
+            - name: Fetch version info
+              run: |
+                  # Extract flutter_version from .fvmrc
+                  FLUTTER_VERSION=$(jq -r '.flutter' .fvmrc)
+                  echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> "$GITHUB_ENV"
+              shell: bash
+
+            - name: Set up Flutter
+              uses: subosito/flutter-action@v2.16.0
+              with:
+                  channel: 'stable'
+                  flutter-version: ${{ env.FLUTTER_VERSION }}
+                  cache: true
+                  cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+                  cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
+
+            - name: Get dependencies
+              run: flutter pub get
+
+            - name: Setup Dart
+              uses: dart-lang/setup-dart@v1
+
+            - name: Analyze Dart
+              uses: invertase/github-action-dart-analyzer@v3
+              with:
+                  custom-lint: true
