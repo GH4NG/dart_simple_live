@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fvp/mdk.dart' as mdk;
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:get/get.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/modules/live_room/live_room_controller.dart';
@@ -57,6 +58,7 @@ class LibMDK extends BasePlayer {
 
     _player = mdk.Player();
 
+    WakelockPlus.enable();
     setupPlayerDebugInfoSubscription();
   }
 
@@ -118,6 +120,7 @@ class LibMDK extends BasePlayer {
 
   @override
   Future<void> dispose() async {
+    WakelockPlus.disable();
     _textureId.value = null;
     _player?.dispose();
     _player = null;

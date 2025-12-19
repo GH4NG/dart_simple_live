@@ -205,9 +205,6 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
       VolumeController.instance.showSystemUI = false;
     }
 
-    // 屏幕常亮
-    //WakelockPlus.enable();
-
     // 开始隐藏计时
     resetHideControlsTimer();
 
