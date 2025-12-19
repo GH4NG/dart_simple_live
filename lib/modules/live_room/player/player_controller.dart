@@ -35,6 +35,7 @@ mixin PlayerMixin {
   /// 初始化播放器并设置参数
   Future<void> initializePlayer() async {
     isPlayerInitialized.value = false;
+    globalPlayerKey = GlobalKey();
     await player.init();
     isPlayerInitialized.value = true;
     //设置音量

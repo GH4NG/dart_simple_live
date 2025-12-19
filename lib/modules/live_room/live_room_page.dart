@@ -253,59 +253,45 @@ class LiveRoomPage extends GetView<LiveRoomController> {
   }
 
   Widget buildMediaPlayer() {
-    return Obx(() {
-      var boxFit = BoxFit.contain;
-      double? aspectRatio;
-      switch (AppSettingsController.instance.scaleMode.value) {
-        case 0:
-          boxFit = BoxFit.contain;
-          break;
-        case 1:
-          boxFit = BoxFit.fill;
-          break;
-        case 2:
-          boxFit = BoxFit.cover;
-          break;
-        case 3:
-          boxFit = BoxFit.contain;
-          aspectRatio = 16 / 9;
-          break;
-        case 4:
-          boxFit = BoxFit.contain;
-          aspectRatio = 4 / 3;
-          break;
-        default:
-          boxFit = BoxFit.contain;
-      }
+    return Stack(
+      children: [
+        Container(color: Colors.black),
+        Obx(() {
+          if (!controller.isPlayerInitialized.value) {
+            return const SizedBox();
+          }
 
-      return Stack(
-        children: [
-          Container(color: Colors.black),
-          Obx(() {
-            if (!controller.isPlayerInitialized.value) {
-              return const SizedBox();
-            }
-            return controller.player.videoWidget(
-                  const Key("live_player"),
-                  aspectRatio,
-                  boxFit,
-                ) ??
-                const SizedBox();
-          }),
-          Obx(
-            () => Visibility(
-              visible: !controller.liveStatus.value,
-              child: const Center(
-                child: Text(
-                  "未开播",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
+          final (
+            boxFit,
+            aspectRatio,
+          ) = switch (AppSettingsController.instance.scaleMode.value) {
+            1 => (BoxFit.fill, null),
+            2 => (BoxFit.cover, null),
+            3 => (BoxFit.contain, 16 / 9),
+            4 => (BoxFit.contain, 4 / 3),
+            _ => (BoxFit.contain, null),
+          };
+
+          return controller.player.videoWidget(
+                controller.globalPlayerKey,
+                aspectRatio,
+                boxFit,
+              ) ??
+              const SizedBox();
+        }),
+        Obx(
+          () => Visibility(
+            visible: !controller.liveStatus.value,
+            child: const Center(
+              child: Text(
+                "未开播",
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
           ),
-        ],
-      );
-    });
+        ),
+      ],
+    );
   }
 
   Widget buildUserProfile(BuildContext context) {
