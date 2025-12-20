@@ -151,6 +151,11 @@ class AppSettingsController extends GetxController {
       false,
     );
 
+    playerShowSuperChat.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerShowSuperChat,
+      true,
+    );
+
     // ignore: invalid_use_of_protected_member
     shieldList.value = LocalStorageService.instance.shieldBox.values.toSet();
 
