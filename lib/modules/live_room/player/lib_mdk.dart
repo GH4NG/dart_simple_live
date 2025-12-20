@@ -164,15 +164,11 @@ class LibMDK extends BasePlayer {
 
     player
       ..media = url
-      ..loop = 0;
+      ..prepare()
+      ..state = mdk.PlaybackState.playing;
 
     lastState = lastState.copyWith(playlist: [url]);
-
-    final ret = await player.prepare();
-    if (ret < 0) {
-      Log.w('MDK prepare failed: $ret');
-      return;
-    }
+    _stateController.add(lastState);
 
     final id = await player.updateTexture();
     if (id < 0) {
