@@ -57,3 +57,5 @@ local.properties
 
 # FVM Version Cache
 .fvm/
+
+.zed/
