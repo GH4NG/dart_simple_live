@@ -600,13 +600,15 @@ mixin PlayerGestureControlMixin
       }
     }
     int volume = _convertVolume((seek * 100).round());
-    if (volume == lastVolume) {
-      return;
-    }
-    lastVolume = volume;
-    // update UI outside throttle to make it more fluent
+
+    // 更新 UI 显示
     gestureTipText.value = "音量 $volume%";
-    throttle?.invoke(() async => await _realSetVolume(volume));
+
+    // 只有当音量真正变化时才调用设置
+    if (volume != lastVolume) {
+      lastVolume = volume;
+      throttle?.invoke(() async => await _realSetVolume(volume));
+    }
   }
 
   // 0 to 100, 5 step each
@@ -614,9 +616,9 @@ mixin PlayerGestureControlMixin
     return (volume / 5).round() * 5;
   }
 
-  Future _realSetVolume(int volume) async {
-    Log.logPrint(volume);
-    VolumeController.instance.setVolume(volume / 100);
+  Future<void> _realSetVolume(int volume) async {
+    Log.logPrint("Setting volume: $volume");
+    await VolumeController.instance.setVolume(volume / 100);
   }
 
   void setGestureBrightness(double dy) {
@@ -653,6 +655,7 @@ mixin PlayerGestureControlMixin
     throttle = null;
     verticalDragging = false;
     leftVerticalDrag = false;
+    lastVolume = -1;
     showGestureTip.value = false;
   }
 }
