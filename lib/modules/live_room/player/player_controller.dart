@@ -677,6 +677,19 @@ class PlayerController extends BaseController
     //设置音量
     player.setVolume(AppSettingsController.instance.playerVolume.value);
 
+    // 监听播放器状态变化
+    _stateSubscription = player.stateStream.listen((state) {
+      // 当视频尺寸准备好且启用了自动全屏，自动进入全屏
+      if (autoFullScreen &&
+          !fullScreenState.value &&
+          state.width != null &&
+          state.height != null &&
+          state.width! > 0 &&
+          state.height! > 0) {
+        enterFullScreen();
+      }
+    });
+
     super.onInit();
   }
 
