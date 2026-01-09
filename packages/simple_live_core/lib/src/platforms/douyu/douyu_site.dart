@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:simple_live_core/src/common/http_client.dart';
-import 'package:simple_live_core/src/danmaku/douyu_danmaku.dart';
+import 'package:simple_live_core/src/platforms/douyu/douyu_danmaku.dart';
 import 'package:simple_live_core/src/interface/live_danmaku.dart';
 import 'package:simple_live_core/src/interface/live_site.dart';
 import 'package:simple_live_core/src/model/live_anchor_item.dart';
@@ -16,7 +16,7 @@ import 'package:simple_live_core/src/model/live_room_detail.dart';
 import 'package:simple_live_core/src/model/live_play_quality.dart';
 import 'package:simple_live_core/src/model/live_category_result.dart';
 import 'package:html_unescape/html_unescape.dart';
-import 'package:simple_live_core/src/scripts/douyu_sign.dart';
+import 'package:simple_live_core/src/platforms/douyu/douyu_sign.dart';
 
 class DouyuSite implements LiveSite {
   @override

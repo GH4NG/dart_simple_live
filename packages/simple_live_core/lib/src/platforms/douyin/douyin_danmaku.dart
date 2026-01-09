@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:simple_live_core/simple_live_core.dart';
 import 'package:simple_live_core/src/common/constant.dart';
 import 'package:simple_live_core/src/common/web_socket_util.dart';
-import 'package:simple_live_core/src/scripts/douyin_sign.dart';
+import 'package:simple_live_core/src/platforms/douyin/douyin_sign.dart';
 
 import 'package:simple_live_core/src/danmaku/proto/douyin.pb.dart';
 
