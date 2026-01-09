@@ -5,8 +5,7 @@ import 'package:simple_live_core/simple_live_core.dart';
 import 'package:simple_live_core/src/common/constant.dart';
 import 'package:simple_live_core/src/common/web_socket_util.dart';
 import 'package:simple_live_core/src/platforms/douyin/douyin_sign.dart';
-
-import 'package:simple_live_core/src/danmaku/proto/douyin.pb.dart';
+import 'package:simple_live_core/src/platforms/douyin/proto/douyin.pb.dart';
 
 class DouyinDanmakuArgs {
   final String webRid;
@@ -141,23 +140,23 @@ class DouyinDanmaku implements LiveDanmaku {
 
   @override
   void heartbeat() {
-    var obj = PushFrame()..payloadType = 'hb';
+    var obj = Webcast_Im_PushFrame()..payloadType = 'hb';
     webSocketUtils?.sendMessage(obj.writeToBuffer());
   }
 
   void decodeMessage(dynamic args) {
     // CoreLog.i(args.toString());
 
-    var wssPackage = PushFrame.fromBuffer(args);
+    var wssPackage = Webcast_Im_PushFrame.fromBuffer(args);
 
-    var logId = wssPackage.logId;
+    var logID = wssPackage.logID;
     var decompressed = gzip.decode(wssPackage.payload);
-    var payloadPackage = Response.fromBuffer(decompressed);
+    var payloadPackage = Webcast_Im_Response.fromBuffer(decompressed);
     if (payloadPackage.needAck) {
-      sendAck(logId, payloadPackage.internalExt);
+      sendAck(logID, payloadPackage.internalExt);
       //return;
     }
-    for (var msg in payloadPackage.messagesList) {
+    for (var msg in payloadPackage.messages) {
       if (msg.method == 'WebcastChatMessage') {
         unPackWebcastChatMessage(msg.payload);
       } else if (msg.method == 'WebcastRoomUserSeqMessage') {
@@ -167,7 +166,7 @@ class DouyinDanmaku implements LiveDanmaku {
   }
 
   void unPackWebcastChatMessage(List<int> payload) {
-    var chatMessage = ChatMessage.fromBuffer(payload);
+    var chatMessage = Webcast_Im_ChatMessage.fromBuffer(payload);
     var emojiUrls = parseEmojiURL(chatMessage.content);
     onMessage?.call(
       LiveMessage(
@@ -178,14 +177,14 @@ class DouyinDanmaku implements LiveDanmaku {
         //     ? LiveMessageColor.white
         //     : LiveMessageColor.numberToColor(color),
         message: chatMessage.content,
-        userName: chatMessage.user.nickName,
+        userName: chatMessage.user.nickname,
         imageUrls: emojiUrls,
       ),
     );
   }
 
   void unPackWebcastRoomUserSeqMessage(List<int> payload) {
-    var roomUserSeqMessage = RoomUserSeqMessage.fromBuffer(payload);
+    var roomUserSeqMessage = Webcast_Im_RoomUserSeqMessage.fromBuffer(payload);
 
     onMessage?.call(
       LiveMessage(
@@ -198,16 +197,16 @@ class DouyinDanmaku implements LiveDanmaku {
     );
   }
 
-  void sendAck(dynamic logId, String internalExt) {
-    var obj = PushFrame()
+  void sendAck(dynamic logID, String internalExt) {
+    var obj = Webcast_Im_PushFrame()
       ..payloadType = 'ack'
-      ..logId = logId
+      ..logID = logID
       ..payloadType = internalExt;
     webSocketUtils?.sendMessage(obj.writeToBuffer());
   }
 
   void joinRoom(dynamic args) {
-    var obj = PushFrame()..payloadType = 'hb';
+    var obj = Webcast_Im_PushFrame()..payloadType = 'hb';
     webSocketUtils?.sendMessage(obj.writeToBuffer());
   }
 
