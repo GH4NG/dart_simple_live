@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="128" src="/assets/logo.png" alt="Simple Live logo">
+    <img width="128" src="assets/logo.png" alt="Simple Live logo">
 </p>
 <h1 align="center">Simple Live</h1>
 
