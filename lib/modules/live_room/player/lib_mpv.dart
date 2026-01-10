@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -43,16 +44,49 @@ class LibMPV extends BasePlayer {
       ),
     );
 
-    final hardwareAccelerationEnabled = settings.hardwareDecode.value;
-    final hardwareDecoder = settings.videoHardwareDecoder.value;
-    _controller = VideoController(
-      _player!,
-      configuration: VideoControllerConfiguration(
+    // 设置自定义音频输出驱动
+    if (settings.customPlayerOutput.value) {
+      if (_player!.platform is mpv.NativePlayer) {
+        await (_player!.platform as mpv.NativePlayer).setProperty(
+          'ao',
+          settings.audioOutputDriver.value,
+        );
+      }
+    }
+
+    // Android 平台设置 force-seekable 解决音画不同步问题
+    if (Platform.isAndroid) {
+      if (_player!.platform is mpv.NativePlayer) {
+        await (_player!.platform as mpv.NativePlayer).setProperty(
+          'force-seekable',
+          'yes',
+        );
+      }
+    }
+
+    // 优先级：自定义设置 > 默认设置
+    final VideoControllerConfiguration config;
+    if (settings.customPlayerOutput.value) {
+      config = VideoControllerConfiguration(
+        vo: settings.videoOutputDriver.value,
+        hwdec: settings.videoHardwareDecoder.value,
+      );
+    } else if (settings.playerCompatMode.value) {
+      config = const VideoControllerConfiguration(
+        vo: 'mediacodec_embed',
+        hwdec: 'mediacodec',
+      );
+    } else {
+      final hardwareAccelerationEnabled = settings.hardwareDecode.value;
+      final hardwareDecoder = settings.videoHardwareDecoder.value;
+      config = VideoControllerConfiguration(
         enableHardwareAcceleration: hardwareAccelerationEnabled,
         hwdec: hardwareAccelerationEnabled ? hardwareDecoder : 'no',
         androidAttachSurfaceAfterVideoParameters: false,
-      ),
-    );
+      );
+    }
+
+    _controller = VideoController(_player!, configuration: config);
 
     setupPlayerDebugInfoSubscription();
   }
