@@ -16,14 +16,14 @@ dependencies:
     protobuf: ^6.0.0
     crypto: ^3.0.6
     brotli: ^0.6.0
-    tars_flutter:
+    tars_dart:
         git:
-            url: https://github.com/dbjiasb/TarsFlutter.git
-            ref: main
-    fixnum: ^1.1.1
+            url: https://github.com/xiaoyaocz/dart_simple_live.git
+            path: ./simple_live_core/packages/tars_dart
+    fixnum: ^1.1.0
     dart_quickjs:
         git:
-            url: https://github.com/xiaoyaocz/dart_quickjs
+            url: https://github.com/xiaoyaocz/dart_quickjs.git
             ref: main
 
 dev_dependencies:

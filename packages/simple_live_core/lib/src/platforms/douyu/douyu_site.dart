@@ -222,6 +222,24 @@ class DouyuSite implements LiveSite {
     );
     var crptext = json.decode(jsEncResult)["data"]["room$roomId"].toString();
 
+    if (showTime != null && showTime.isNotEmpty) {
+      try {
+        int startTimeStamp = int.parse(showTime);
+        int currentTimeStamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        int durationInSeconds = currentTimeStamp - startTimeStamp;
+
+        int hours = durationInSeconds ~/ 3600;
+        int minutes = (durationInSeconds % 3600) ~/ 60;
+        int seconds = durationInSeconds % 60;
+
+        String formattedDuration =
+            '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+        print('斗鱼直播间 $roomId 开播时长: $formattedDuration');
+      } catch (e) {
+        print('计算开播时长出错: $e');
+      }
+    }
+
     return LiveRoomDetail(
       cover: roomInfo["room_pic"].toString(),
       online: int.tryParse(roomInfo["room_biz_all"]["hot"].toString()) ?? 0,
@@ -249,11 +267,7 @@ class DouyuSite implements LiveSite {
     var did = generateRandomString(32);
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchShow",
-      queryParameters: {
-        "kw": keyword,
-        "page": page,
-        "pageSize": 20,
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": 20},
       header: {
         'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',

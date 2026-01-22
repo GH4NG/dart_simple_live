@@ -1,6 +1,6 @@
-import 'package:tars_flutter/tars/codec/tars_input_stream.dart';
-import 'package:tars_flutter/tars/codec/tars_output_stream.dart';
-import 'package:tars_flutter/tars/codec/tars_struct.dart';
+import 'package:tars_dart/tars/codec/tars_input_stream.dart';
+import 'package:tars_dart/tars/codec/tars_output_stream.dart';
+import 'package:tars_dart/tars/codec/tars_struct.dart';
 
 class HYPushMessage extends TarsStruct {
   int pushType = 0;

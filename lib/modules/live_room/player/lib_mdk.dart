@@ -280,7 +280,7 @@ class LibMDK extends BasePlayer {
           );
           _stateController.add(lastState);
           Log.d(
-            "MDK: 视频尺寸变化: ${videoWidth}x${videoHeight}, fps=${codec.frameRate}, isVertical=$isVertical",
+            "MDK: 视频尺寸变化: ${videoWidth}x$videoHeight, fps=${codec.frameRate}, isVertical=$isVertical",
           );
           break;
       }
