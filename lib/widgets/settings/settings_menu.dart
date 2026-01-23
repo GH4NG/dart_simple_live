@@ -7,6 +7,7 @@ class SettingsMenu<T> extends StatelessWidget {
   final String? subtitle;
   final Map<T, String> valueMap;
   final T value;
+  final Widget? trailing;
 
   final Function(T)? onChanged;
   const SettingsMenu({
@@ -15,6 +16,7 @@ class SettingsMenu<T> extends StatelessWidget {
     required this.valueMap,
     this.subtitle,
     this.onChanged,
+    this.trailing,
     super.key,
   });
 
@@ -22,8 +24,13 @@ class SettingsMenu<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: VisualDensity.compact,
-      title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
-      shape: RoundedRectangleBorder(borderRadius: AppStyle.radius8),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppStyle.radius8,
+      ),
       contentPadding: AppStyle.edgeInsetsL16.copyWith(right: 8),
       subtitle: subtitle == null
           ? null
@@ -31,19 +38,24 @@ class SettingsMenu<T> extends StatelessWidget {
               subtitle!,
               style: Get.textTheme.bodySmall!.copyWith(color: Colors.grey),
             ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            valueMap[value]!.tr,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium!.copyWith(color: Colors.grey),
+      trailing:
+          trailing ??
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                valueMap[value]!.tr,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Colors.grey),
+              ),
+              AppStyle.hGap4,
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.grey,
+              ),
+            ],
           ),
-          AppStyle.hGap4,
-          const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
-      ),
       onTap: () => openMenu(context),
     );
   }

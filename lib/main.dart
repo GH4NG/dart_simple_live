@@ -88,8 +88,12 @@ Future initServices() async {
     ..put(DouyinAccountService())
     ..put(SyncService())
     ..put(FollowService())
-    ..put(HistoryService())
-    ..put(WindowService());
+    ..put(HistoryService());
+
+  // 移动平台不使用 windowManager
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    Get.put(WindowService());
+  }
 
   initCoreLog();
 }
@@ -143,110 +147,119 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
           );
         }
-        return GetMaterialApp(
-          title: "Simple Live",
-          theme: AppStyle.lightTheme.copyWith(colorScheme: lightColorScheme),
-          darkTheme: AppStyle.darkTheme.copyWith(colorScheme: darkColorScheme),
-          themeMode: ThemeMode
-              .values[Get.find<AppSettingsController>().themeMode.value],
-          initialRoute: RoutePath.kIndex,
-          getPages: AppPages.routes,
-          //国际化
-          locale: const Locale("zh", "CN"),
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale("zh", "CN")],
-          logWriterCallback: (text, {bool? isError}) {
-            Log.addDebugLog(
-              text,
-              (isError ?? false) ? Colors.red : Colors.grey,
-            );
-            Log.writeLog(text, (isError ?? false) ? Level.error : Level.info);
-          },
-          // 升级后Android页面过渡动画似乎有BUG
-          defaultTransition: Platform.isAndroid ? Transition.cupertino : null,
-          //debugShowCheckedModeBanner: false,
-          navigatorObservers: [FlutterSmartDialog.observer],
-          builder: FlutterSmartDialog.init(
-            loadingBuilder: ((msg) => const AppLoadingWidget()),
-            //字体大小不跟随系统变化
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.noScaling),
-              child: Stack(
-                children: [
-                  //侧键返回
-                  RawGestureDetector(
-                    excludeFromSemantics: true,
-                    gestures: <Type, GestureRecognizerFactory>{
-                      FourthButtonTapGestureRecognizer:
-                          GestureRecognizerFactoryWithHandlers<
-                            FourthButtonTapGestureRecognizer
-                          >(
-                            FourthButtonTapGestureRecognizer.new,
-                            (FourthButtonTapGestureRecognizer instance) {
-                              instance
-                                  .onTapDown = (TapDownDetails details) async {
-                                //如果处于全屏状态，退出全屏
-                                if (!Platform.isAndroid && !Platform.isIOS) {
-                                  if (await windowManager.isFullScreen()) {
-                                    await windowManager.setFullScreen(false);
-                                    return;
-                                  }
-                                }
-                                Get.back();
-                              };
-                            },
-                          ),
-                    },
-                    child: KeyboardListener(
-                      focusNode: FocusNode(),
-                      onKeyEvent: (KeyEvent event) async {
-                        if (event is KeyDownEvent &&
-                            event.logicalKey == LogicalKeyboardKey.escape) {
-                          // ESC退出全屏
-                          // 如果处于全屏状态，退出全屏
-                          if (!Platform.isAndroid && !Platform.isIOS) {
-                            if (await windowManager.isFullScreen()) {
-                              await windowManager.setFullScreen(false);
-                              EventBus.instance.emit(
-                                EventBus.kEscapePressed,
-                                0,
-                              );
-                              return;
+        return Obx(
+          () => GetMaterialApp(
+            title: "Simple Live",
+            theme: AppStyle.lightTheme.copyWith(colorScheme: lightColorScheme),
+            darkTheme: AppStyle.darkTheme.copyWith(
+              colorScheme: darkColorScheme,
+            ),
+
+            themeMode: ThemeMode
+                .values[Get.find<AppSettingsController>().themeMode.value],
+            initialRoute: RoutePath.kIndex,
+            getPages: AppPages.routes,
+            //国际化
+            locale: const Locale("zh", "CN"),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale("zh", "CN")],
+            logWriterCallback: (text, {bool? isError}) {
+              Log.addDebugLog(
+                text,
+                (isError ?? false) ? Colors.red : Colors.grey,
+              );
+              Log.writeLog(text, (isError ?? false) ? Level.error : Level.info);
+            },
+            // 升级后Android页面过渡动画似乎有BUG
+            defaultTransition: Platform.isAndroid ? Transition.cupertino : null,
+            //debugShowCheckedModeBanner: false,
+            navigatorObservers: [FlutterSmartDialog.observer],
+            builder: FlutterSmartDialog.init(
+              loadingBuilder: ((msg) => const AppLoadingWidget()),
+              //字体大小不跟随系统变化
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.noScaling),
+                child: Stack(
+                  children: [
+                    //侧键返回
+                    RawGestureDetector(
+                      excludeFromSemantics: true,
+                      gestures: <Type, GestureRecognizerFactory>{
+                        FourthButtonTapGestureRecognizer:
+                            GestureRecognizerFactoryWithHandlers<
+                              FourthButtonTapGestureRecognizer
+                            >(
+                              FourthButtonTapGestureRecognizer.new,
+                              (FourthButtonTapGestureRecognizer instance) {
+                                instance.onTapDown =
+                                    (TapDownDetails details) async {
+                                      //如果处于全屏状态，退出全屏
+                                      if (!Platform.isAndroid &&
+                                          !Platform.isIOS) {
+                                        if (await windowManager
+                                            .isFullScreen()) {
+                                          await windowManager.setFullScreen(
+                                            false,
+                                          );
+                                          return;
+                                        }
+                                      }
+                                      Get.back();
+                                    };
+                              },
+                            ),
+                      },
+                      child: KeyboardListener(
+                        focusNode: FocusNode(),
+                        onKeyEvent: (KeyEvent event) async {
+                          if (event is KeyDownEvent &&
+                              event.logicalKey == LogicalKeyboardKey.escape) {
+                            // ESC退出全屏
+                            // 如果处于全屏状态，退出全屏
+                            if (!Platform.isAndroid && !Platform.isIOS) {
+                              if (await windowManager.isFullScreen()) {
+                                await windowManager.setFullScreen(false);
+                                EventBus.instance.emit(
+                                  EventBus.kEscapePressed,
+                                  0,
+                                );
+                                return;
+                              }
                             }
                           }
-                        }
-                      },
-                      child: child!,
+                        },
+                        child: child!,
+                      ),
                     ),
-                  ),
 
-                  //查看DEBUG日志按钮
-                  //只在Debug、Profile模式显示
-                  Visibility(
-                    visible: !kReleaseMode,
-                    child: Positioned(
-                      right: 12,
-                      bottom: 100 + context.mediaQueryViewPadding.bottom,
-                      child: Opacity(
-                        opacity: 0.4,
-                        child: ElevatedButton(
-                          child: const Text("DEBUG LOG"),
-                          onPressed: () {
-                            Get.bottomSheet(
-                              const DebugLogPage(),
-                            );
-                          },
+                    //查看DEBUG日志按钮
+                    //只在Debug、Profile模式显示
+                    Visibility(
+                      visible: !kReleaseMode,
+                      child: Positioned(
+                        right: 12,
+                        bottom: 100 + context.mediaQueryViewPadding.bottom,
+                        child: Opacity(
+                          opacity: 0.4,
+                          child: ElevatedButton(
+                            child: const Text("DEBUG LOG"),
+                            onPressed: () {
+                              Get.bottomSheet(
+                                const DebugLogPage(),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -1,12 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:simple_live_app/app/constant.dart';
 import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/services/local_storage_service.dart';
-
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class AppSettingsController extends GetxController {
   static AppSettingsController get instance =>
@@ -109,7 +108,7 @@ class AppSettingsController extends GetxController {
 
     qualityLevel.value = LocalStorageService.instance.getValue(
       LocalStorageService.kQualityLevel,
-      1,
+      2,
     );
     qualityLevelCellular.value = LocalStorageService.instance.getValue(
       LocalStorageService.kQualityLevelCellular,
@@ -143,6 +142,11 @@ class AppSettingsController extends GetxController {
 
     playerForceHttps.value = LocalStorageService.instance.getValue(
       LocalStorageService.kPlayerForceHttps,
+      false,
+    );
+
+    douyinHlsFirst.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDouyinHlsFirst,
       false,
     );
 
@@ -223,7 +227,7 @@ class AppSettingsController extends GetxController {
 
     videoOutputDriver.value = LocalStorageService.instance.getValue(
       LocalStorageService.kVideoOutputDriver,
-      Platform.isAndroid ? "gpu" : "libmpv",
+      Platform.isAndroid ? "mediacodec_embed" : "libmpv",
     );
 
     audioOutputDriver.value = LocalStorageService.instance.getValue(
@@ -243,7 +247,7 @@ class AppSettingsController extends GetxController {
 
     videoHardwareDecoder.value = LocalStorageService.instance.getValue(
       LocalStorageService.kVideoHardwareDecoder,
-      Platform.isAndroid ? "auto-safe" : "auto",
+      Platform.isAndroid ? "mediacodec" : "auto",
     );
 
     customPlayerDecoder.value = LocalStorageService.instance.getValue(
@@ -284,6 +288,18 @@ class AppSettingsController extends GetxController {
     dbVer = LocalStorageService.instance.getValue(
       LocalStorageService.kHiveDbVer,
       10708,
+    );
+
+    followSortMethod.value = SortMethodStore.fromStore(
+      LocalStorageService.instance.getValue(
+        LocalStorageService.kFollowSortMethod,
+        SortMethod.watchDuration.storeValue,
+      ),
+    );
+
+    followStyleNotGrid.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kFollowStyleNotGrid,
+      true,
     );
 
     initSiteSort();
@@ -924,5 +940,33 @@ class AppSettingsController extends GetxController {
     if (!videoDecoders.containsKey(savedDecoder)) {
       setVideoDecoder("FFmpeg");
     }
+  }
+
+  var douyinHlsFirst = false.obs;
+  void setDouyinHlsFirst(bool e) {
+    douyinHlsFirst.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDouyinHlsFirst,
+      e,
+    );
+  }
+
+  var followSortMethod = SortMethod.watchDuration.obs;
+  void setFollowSortMethod(SortMethod e) {
+    followSortMethod.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kFollowSortMethod,
+      e.storeValue,
+    );
+  }
+
+  // 关注样式是否卡片化
+  var followStyleNotGrid = true.obs;
+  void setFollowStyleNotGrid(bool e) {
+    followStyleNotGrid.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kFollowStyleNotGrid,
+      e,
+    );
   }
 }

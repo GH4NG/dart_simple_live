@@ -26,3 +26,6 @@ export 'src/platforms/douyu/douyu_site.dart';
 
 export 'src/platforms/huya/huya_danmaku.dart';
 export 'src/platforms/huya/huya_site.dart';
+
+export 'src/platforms/twitch/twitch_danmaku.dart';
+export 'src/platforms/twitch/twitch_site.dart';

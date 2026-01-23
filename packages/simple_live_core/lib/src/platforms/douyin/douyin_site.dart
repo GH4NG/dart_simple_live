@@ -16,6 +16,8 @@ class DouyinSite implements LiveSite {
   @override
   LiveDanmaku getDanmaku() => DouyinDanmaku();
 
+  bool hlsFirst = false;
+
   /// 使用 QQBrowser User-Agent（参考 DouyinLiveRecorder）
   static const String kDefaultUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 Core/1.116.567.400 QQBrowser/19.7.6764.400";
@@ -550,86 +552,82 @@ class DouyinSite implements LiveSite {
   }) async {
     List<LivePlayQuality> qualities = [];
 
-    try {
-      var liveCoreData = detail.data["live_core_sdk_data"];
+    var qualityList =
+        detail.data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
+    var streamData = detail
+        .data["live_core_sdk_data"]["pull_data"]["stream_data"]
+        .toString();
 
-      if (liveCoreData == null) {
-        return qualities;
-      }
-
-      var pullData = liveCoreData["pull_data"];
-
-      if (pullData == null) {
-        return qualities;
-      }
-
-      var options = pullData["options"];
-
-      var qualityList = options?["qualities"];
-
-      var streamData = pullData["stream_data"]?.toString() ?? "";
-
-      if (!streamData.startsWith('{')) {
-        var flvList = (detail.data["flv_pull_url"] as Map).values
-            .cast<String>()
-            .toList();
-        var hlsList = (detail.data["hls_pull_url_map"] as Map).values
-            .cast<String>()
-            .toList();
-        for (var quality in qualityList) {
-          int level = quality["level"];
-          List<String> urls = [];
-          var flvIndex = flvList.length - level;
-          if (flvIndex >= 0 && flvIndex < flvList.length) {
-            urls.add(flvList[flvIndex]);
-          }
-          var hlsIndex = hlsList.length - level;
-          if (hlsIndex >= 0 && hlsIndex < hlsList.length) {
-            urls.add(hlsList[hlsIndex]);
-          }
-          var qualityItem = LivePlayQuality(
-            quality: quality["name"],
-            sort: level,
-            data: urls,
-          );
-          if (urls.isNotEmpty) {
-            qualities.add(qualityItem);
-          }
+    if (!streamData.startsWith('{')) {
+      var flvList = (detail.data["flv_pull_url"] as Map).values
+          .cast<String>()
+          .toList();
+      var hlsList = (detail.data["hls_pull_url_map"] as Map).values
+          .cast<String>()
+          .toList();
+      for (var quality in qualityList) {
+        int level = quality["level"];
+        List<String> urls = [];
+        var flvIndex = flvList.length - level;
+        if (flvIndex >= 0 && flvIndex < flvList.length) {
+          urls.add(flvList[flvIndex]);
         }
-      } else {
-        var qualityData = json.decode(streamData)["data"] as Map;
-        for (var quality in qualityList) {
-          List<String> urls = [];
-          var flvUrl = qualityData[quality["sdk_key"]]?["main"]?["flv"]
-              ?.toString();
+        var hlsIndex = hlsList.length - level;
+        if (hlsIndex >= 0 && hlsIndex < hlsList.length) {
+          urls.add(hlsList[hlsIndex]);
+        }
+        var qualityItem = LivePlayQuality(
+          quality: quality["name"],
+          sort: level,
+          data: urls,
+        );
+        if (urls.isNotEmpty) {
+          qualities.add(qualityItem);
+        }
+      }
+    } else {
+      var qualityData = json.decode(streamData)["data"] as Map;
+      for (var quality in qualityList) {
+        List<String> urls = [];
+        var flvUrl = qualityData[quality["sdk_key"]]?["main"]?["flv"]
+            ?.toString();
 
-          if (flvUrl != null && flvUrl.isNotEmpty) {
-            urls.add(flvUrl);
-          }
-          var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]
-              ?.toString();
-
-          if (hlsUrl != null && hlsUrl.isNotEmpty) {
+        if (flvUrl != null && flvUrl.isNotEmpty) {
+          urls.add(flvUrl);
+        }
+        var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]
+            ?.toString();
+        if (hlsUrl != null && hlsUrl.isNotEmpty) {
+          if (hlsFirst) {
+            urls.insert(0, hlsUrl);
+          } else {
             urls.add(hlsUrl);
           }
-
-          var qualityItem = LivePlayQuality(
-            quality: quality["name"],
-            sort: quality["level"],
-            data: urls,
-          );
-          if (urls.isNotEmpty) {
-            qualities.add(qualityItem);
-          }
+        }
+        var qualityItem = LivePlayQuality(
+          quality: quality["name"],
+          sort: quality["level"],
+          data: urls,
+        );
+        if (urls.isNotEmpty) {
+          qualities.add(qualityItem);
         }
       }
-    } catch (e, stackTrace) {
-      CoreLog.error(e);
-      CoreLog.error(stackTrace);
-    }
-    // var qualityData = json.decode(
-    //     detail.data["live_core_sdk_data"]["pull_data"]["stream_data"])["data"];
 
+      //   // 真原画 media_kit 不支持 hvc1编码
+      //   try{
+      //     String realOriginStream =  (qualityData['ao']['main']['flv'] as String).replaceAll('&only_audio=1','');
+      //     List<String> urls = [realOriginStream];
+      //     var realQualityItem = LivePlayQuality(
+      //       quality: "真原画",
+      //       sort: 10,
+      //       data: urls,
+      //     );
+      //     qualities.add(realQualityItem);
+      //   }catch(e){
+      //     CoreLog.error("未找到 ao 流 $e");
+      //   }
+    }
     qualities.sort((a, b) => b.sort.compareTo(a.sort));
     return qualities;
   }

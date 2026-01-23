@@ -33,7 +33,9 @@ class HistoryService extends GetxService {
     _updateHistory();
     _stopwatch.reset();
     History? history = DBService.instance.getHistory(roomId);
-    _loadHistory(history!);
+    if (history != null) {
+      _loadHistory(history);
+    }
   }
 
   // 停止计时
@@ -74,5 +76,13 @@ class HistoryService extends GetxService {
     curLiveRoomHistory?.updateTime = DateTime.now();
     DBService.instance.addOrUpdateHistory(curLiveRoomHistory!);
     EventBus.instance.emit(Constant.kUpdateFollow, curLiveRoomHistory);
+  }
+
+  // 获取历史记录中存储的累计观看时长
+  String getHistoryDuration({required String followUserId}) {
+    var historyWatchDuration = "00:00:00";
+    History? history = DBService.instance.getHistory(followUserId);
+    historyWatchDuration = history?.watchDuration ?? "00:00:00";
+    return historyWatchDuration;
   }
 }

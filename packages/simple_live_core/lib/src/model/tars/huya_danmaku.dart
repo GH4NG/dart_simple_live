@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:tars_dart/tars/codec/tars_input_stream.dart';
 import 'package:tars_dart/tars/codec/tars_output_stream.dart';
 import 'package:tars_dart/tars/codec/tars_struct.dart';

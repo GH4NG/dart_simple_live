@@ -108,6 +108,9 @@ class LocalStorageService extends GetxService {
   /// 播放器强制使用HTTPS
   static const String kPlayerForceHttps = "PlayerForceHttps";
 
+  /// Douyin设置hls优先
+  static const String kDouyinHlsFirst = "DouyinHlsFirst";
+
   /// 自动全屏
   static const String kAutoFullScreen = "AutoFullScreen";
 
@@ -180,6 +183,9 @@ class LocalStorageService extends GetxService {
   /// WebDAV_服务器地址
   static const String kWebDAVUri = "WebDAVUri";
 
+  /// WebDAV_文件夹
+  static const String kWebDAVDirectory = "WebDAVDirectory";
+
   /// WebDAV_登录账号
   static const String kWebDAVUser = "WebDAVUser";
 
@@ -201,6 +207,12 @@ class LocalStorageService extends GetxService {
 
   static const String kWindowHeight = "WindowHeight";
 
+  /// 关注列表排序方法
+  static const String kFollowSortMethod = "FollowSortMethod";
+
+  /// 关注列表样式
+  static const String kFollowStyleNotGrid = "FollowStyleNotGrid";
+
   /// 数据库版本
   static const String kHiveDbVer = "kHiveDbVer";
 
@@ -219,6 +231,17 @@ class LocalStorageService extends GetxService {
   T getValue<T>(dynamic key, T defaultValue) {
     try {
       var value = settingsBox.get(key, defaultValue: defaultValue) as T;
+      Log.d("Get LocalStorage：$key\r\n$value");
+      return value;
+    } catch (e) {
+      Log.logPrint(e);
+      return defaultValue;
+    }
+  }
+
+  T? getNullValue<T>(dynamic key, T? defaultValue) {
+    try {
+      var value = settingsBox.get(key, defaultValue: defaultValue) as T?;
       Log.d("Get LocalStorage：$key\r\n$value");
       return value;
     } catch (e) {

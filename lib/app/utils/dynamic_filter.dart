@@ -1,6 +1,6 @@
 // ignore_for_file: unintended_html_in_doc_comment
 
-import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_app/app/log.dart';
 
 // 定义筛选条件之间的逻辑关系
 enum LogicalOperator { and, or }
@@ -93,7 +93,7 @@ List<T> dynamicFilter<T extends Mappable>(
         try {
           itemMap = item.toMap();
         } catch (e, s) {
-          CoreLog.e(
+          Log.e(
             "Filter:Failed to convert item to map for default filtering.",
             s,
           );

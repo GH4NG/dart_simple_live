@@ -80,7 +80,7 @@ class WebSocketUtils {
         connect(retry: true);
         return;
       }
-      onError(e, e);
+      onError(e, StackTrace.current);
     }
   }
 
@@ -90,7 +90,7 @@ class WebSocketUtils {
 
     streamSubscription = webSocket?.stream.listen(
       receiveMessage,
-      onError: onError,
+      onError: (e, s) => onError(e, s),
       onDone: onDone,
     );
 
@@ -113,7 +113,7 @@ class WebSocketUtils {
     onMessage?.call(data);
   }
 
-  void onError(dynamic e, dynamic s) {
+  void onError(Object e, StackTrace s) {
     status = SocketStatus.failed;
     onClose?.call(e.toString());
   }

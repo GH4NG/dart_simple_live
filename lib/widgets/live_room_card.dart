@@ -11,7 +11,8 @@ import 'package:simple_live_core/simple_live_core.dart';
 class LiveRoomCard extends StatelessWidget {
   final Site site;
   final LiveRoomItem item;
-  const LiveRoomCard(this.site, this.item, {super.key});
+  final Function()? onLongPress;
+  const LiveRoomCard(this.site, this.item, {super.key, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,7 @@ class LiveRoomCard extends StatelessWidget {
       onTap: () {
         AppNavigator.toLiveRoomDetail(site: site, roomId: item.roomId);
       },
+      onLongPress: onLongPress,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

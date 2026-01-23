@@ -87,10 +87,8 @@ class LiveRoomPage extends GetView<LiveRoomController> {
         if (controller.fullScreenState.value) {
           return PopScope(
             canPop: false,
-            onPopInvokedWithResult: (didPop, result) {
-              if (!didPop) {
-                controller.exitFull();
-              }
+            onPopInvokedWithResult: (e, r) {
+              controller.exitFull();
             },
             child: Scaffold(
               body: buildMediaPlayer(),
@@ -454,7 +452,8 @@ class LiveRoomPage extends GetView<LiveRoomController> {
                 const Tab(
                   text: "聊天",
                 ),
-                if (controller.site.id == Constant.kBiliBili)
+                if (controller.site.id == Constant.kBiliBili ||
+                    controller.site.id == Constant.kDouyu)
                   Tab(
                     child: Obx(
                       () => Text(
@@ -516,7 +515,8 @@ class LiveRoomPage extends GetView<LiveRoomController> {
                       ],
                     ),
                   ),
-                  if (controller.site.id == Constant.kBiliBili)
+                  if (controller.site.id == Constant.kBiliBili ||
+                      controller.site.id == Constant.kDouyu)
                     buildSuperChats(),
                   buildFollowList(),
                   buildSettings(),
@@ -951,7 +951,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
             ),
             ListTile(
               leading: const Icon(Icons.open_in_new),
-              title: const Text("APP中打开"),
+              title: const Text("APP 中打开"),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Get.back();

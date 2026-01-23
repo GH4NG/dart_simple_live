@@ -16,12 +16,17 @@ class DouyinAccountService extends GetxService {
   var logged = false.obs;
   var cookie = "";
   var name = "未登录".obs;
+  var hlsFirst = false.obs;
 
   @override
   void onInit() {
     cookie = LocalStorageService.instance.getValue(
       LocalStorageService.kDouyinCookie,
       "",
+    );
+    hlsFirst.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDouyinHlsFirst,
+      false,
     );
     logged.value = cookie.isNotEmpty;
     loadUserInfo();
@@ -58,6 +63,8 @@ class DouyinAccountService extends GetxService {
 
   void setSite() {
     (Sites.allSites[Constant.kDouyin]!.liveSite as DouyinSite).cookie = cookie;
+    (Sites.allSites[Constant.kDouyin]!.liveSite as DouyinSite).hlsFirst =
+        hlsFirst.value;
   }
 
   void setCookie(String cookie) {
@@ -67,6 +74,14 @@ class DouyinAccountService extends GetxService {
       cookie,
     );
     logged.value = cookie.isNotEmpty;
+  }
+
+  void setHlsFirst(bool hlsFirst) {
+    this.hlsFirst.value = hlsFirst;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDouyinHlsFirst,
+      hlsFirst,
+    );
   }
 
   Future<void> logout() async {

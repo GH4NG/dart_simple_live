@@ -85,6 +85,17 @@ class PlaySettingsPage extends GetView<AppSettingsController> {
                     },
                   ),
                 ),
+                AppStyle.divider,
+                Obx(
+                  () => SettingsSwitch(
+                    title: "抖音HLS流优先",
+                    subtitle: "hls流可缓解部分直播间抖动问题,重启后生效",
+                    value: controller.douyinHlsFirst.value,
+                    onChanged: (e) {
+                      controller.setDouyinHlsFirst(e);
+                    },
+                  ),
+                ),
               ],
             ),
           ),

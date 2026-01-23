@@ -289,22 +289,26 @@ class Utils {
     String title = '',
   }) async {
     var result = await Get.dialog(
-      RadioGroup(
-        groupValue: value,
-        onChanged: (e) {
-          Get.back(result: e);
-        },
-        child: SimpleDialog(
-          title: Text(title),
-          children: contents
-              .map(
-                (e) => RadioListTile<T>(
-                  title: Text(e.toString()),
-                  value: e,
-                ),
-              )
-              .toList(),
-        ),
+      SimpleDialog(
+        title: Text(title),
+        children: [
+          RadioGroup<T>(
+            groupValue: value,
+            onChanged: (e) {
+              Get.back(result: e);
+            },
+            child: Column(
+              children: contents
+                  .map(
+                    (e) => RadioListTile<T>(
+                      title: Text(e.toString()),
+                      value: e,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
       ),
     );
     return result;
@@ -358,22 +362,26 @@ class Utils {
     String title = '',
   }) async {
     var result = await Get.dialog(
-      RadioGroup(
-        groupValue: value,
-        onChanged: (e) {
-          Get.back(result: e);
-        },
-        child: SimpleDialog(
-          title: Text(title),
-          children: contents.keys
-              .map(
-                (e) => RadioListTile<T>(
-                  title: Text((contents[e] ?? '-').tr),
-                  value: e,
-                ),
-              )
-              .toList(),
-        ),
+      SimpleDialog(
+        title: Text(title),
+        children: [
+          RadioGroup<T>(
+            groupValue: value,
+            onChanged: (e) {
+              Get.back(result: e);
+            },
+            child: Column(
+              children: contents.keys
+                  .map(
+                    (e) => RadioListTile<T>(
+                      title: Text((contents[e] ?? '-').tr),
+                      value: e,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
       ),
     );
     return result;

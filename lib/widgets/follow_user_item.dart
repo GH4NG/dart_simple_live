@@ -49,6 +49,7 @@ class _FollowUserItemState extends State<FollowUserItem>
     final item = widget.item;
     final site = Sites.allSites[item.siteId]!;
     final bool isLive = item.liveStatus.value == 2;
+    final String liveArea = (item.liveAreaName.value).trim();
 
     return Material(
       color: Colors.transparent,
@@ -105,7 +106,9 @@ class _FollowUserItemState extends State<FollowUserItem>
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (item.liveAreaName.isNotEmpty)
+                        if (liveArea.isNotEmpty &&
+                            liveArea.toLowerCase() != 'null' &&
+                            (widget.playing || isLive))
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -117,7 +120,7 @@ class _FollowUserItemState extends State<FollowUserItem>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              item.liveAreaName,
+                              liveArea,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Colors.blue,
@@ -154,11 +157,11 @@ class _FollowUserItemState extends State<FollowUserItem>
                           ),
                       ],
                     ),
-                    if (item.liveTitle.isNotEmpty &&
+                    if (item.liveTitle.value.isNotEmpty &&
                         (widget.playing || isLive)) ...[
                       AppStyle.vGap4,
                       Text(
-                        item.liveTitle,
+                        item.liveTitle.value,
                         style: const TextStyle(
                           fontSize: 11,
                           color: Colors.orange,

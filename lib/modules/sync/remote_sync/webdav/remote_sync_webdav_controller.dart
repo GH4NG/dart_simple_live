@@ -29,6 +29,7 @@ import 'package:simple_live_app/services/migration_service.dart';
 class RemoteSyncWebDAVController extends BaseController {
   // ui
   var passwordVisible = true.obs;
+
   // ui-用户选择是否同步
   var isSyncFollows = true.obs;
   var isSyncHistories = true.obs;
@@ -40,6 +41,9 @@ class RemoteSyncWebDAVController extends BaseController {
   var user = "--".obs;
   var lastRecoverTime = "--".obs;
   var lastUploadTime = "--".obs;
+  var uri = "";
+  var password = "";
+  var webDavBackupDirectory = "/simple_live_app".obs;
 
   final _userFollowJsonName = 'SimpleLive_follows.json';
   final _userHistoriesJsonName = 'SimpleLive_histories.json';
@@ -54,10 +58,28 @@ class RemoteSyncWebDAVController extends BaseController {
     super.onInit();
   }
 
+  void setWebDavBackupDirectory({required String newDirectory}) {
+    if (newDirectory == webDavBackupDirectory.value) {
+      return;
+    }
+    webDavBackupDirectory.value = newDirectory;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kWebDAVDirectory,
+      webDavBackupDirectory.value,
+    );
+    // 重定义/应该单例化
+    davClient = DAVClient(
+      uri,
+      user.value,
+      password,
+      webDAVDirectory: webDavBackupDirectory.value,
+    );
+  }
+
   // webDAV 逻辑
   // 初始化webDAV
   void doWebDAVInit() {
-    var uri = LocalStorageService.instance.getValue(
+    uri = LocalStorageService.instance.getValue(
       LocalStorageService.kWebDAVUri,
       "",
     );
@@ -68,11 +90,20 @@ class RemoteSyncWebDAVController extends BaseController {
         LocalStorageService.kWebDAVUser,
         "",
       );
-      var password = LocalStorageService.instance.getValue(
+      password = LocalStorageService.instance.getValue(
         LocalStorageService.kWebDAVPassword,
         "",
       );
-      davClient = DAVClient(uri, user.value, password);
+      webDavBackupDirectory.value = LocalStorageService.instance.getValue(
+        LocalStorageService.kWebDAVDirectory,
+        "/simple_live_app",
+      );
+      davClient = DAVClient(
+        uri,
+        user.value,
+        password,
+        webDAVDirectory: webDavBackupDirectory.value,
+      );
       // 从未同步过默认为最新数据
       lastRecoverTime.value = Utils.parseTime(
         DateTime.fromMillisecondsSinceEpoch(
@@ -235,15 +266,12 @@ class RemoteSyncWebDAVController extends BaseController {
       final accountJsonFile = File(join(profile.path, _userAccountJsonName));
       await accountJsonFile.writeAsString(jsonEncode(userAccountCookieMap));
       await userTagsJsonFile.writeAsString(jsonEncode(dataTagsMap));
-      // 根据需要同步部分设置，其中 HiveDbVer为必须项
+      // 全量备份用户设置，为修改包名无痛迁移数据做准备
+      // v1.8.3 修改为按平台备份/恢复用户设置
+      var settingList = LocalStorageService.instance.settingsBox.toMap();
       var dataSettingListMap = {
-        'data': {
-          LocalStorageService.kHiveDbVer: LocalStorageService.instance.getValue(
-            LocalStorageService.kHiveDbVer,
-            10708,
-          ),
-          LocalStorageService.kWebDAVLastUploadTime:
-              DateTime.now().millisecondsSinceEpoch,
+        "data": {
+          Platform.operatingSystem: settingList,
         },
       };
       final settingJsonFile = File(join(profile.path, _userSettingsJsonName));
@@ -338,11 +366,16 @@ class RemoteSyncWebDAVController extends BaseController {
         }
       } else if (file.name == _userSettingsJsonName && isSyncSetting.value) {
         try {
-          jsonData.forEach(
-            (key, value) {
-              LocalStorageService.instance.setValue(key, value);
-            },
-          );
+          var platform = Platform.operatingSystem;
+          if ((jsonData as Map).containsKey(platform)) {
+            jsonDecode(jsonData[platform]).forEach(
+              (key, value) {
+                LocalStorageService.instance.setValue(key, value);
+              },
+            );
+          } else {
+            Log.i("缺少$platform对应平台用户设置备份");
+          }
           Log.i('已同步用户设置');
         } catch (e) {
           Log.e("同步用户设置失败：$e", StackTrace.current);

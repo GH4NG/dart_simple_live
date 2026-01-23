@@ -59,22 +59,25 @@ class IndexedSettingsPage extends GetView<IndexedSettingsController> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 onReorder: controller.updateSiteSort,
-                children: controller.siteSort.map(
-                  (key) {
-                    var e = Sites.allSites[key]!;
-                    return ListTile(
-                      key: ValueKey(e.id),
-                      visualDensity: VisualDensity.compact,
-                      title: Text(e.name),
-                      leading: Image.asset(
-                        e.logo,
-                        width: 24,
-                        height: 24,
-                      ),
-                      trailing: const Icon(Icons.drag_handle),
-                    );
-                  },
-                ).toList(),
+                children: controller.siteSort
+                    .where((key) => Sites.allSites[key]?.name != 'Twitch')
+                    .map(
+                      (key) {
+                        var e = Sites.allSites[key]!;
+                        return ListTile(
+                          key: ValueKey(e.id),
+                          visualDensity: VisualDensity.compact,
+                          title: Text(e.name),
+                          leading: Image.asset(
+                            e.logo,
+                            width: 24,
+                            height: 24,
+                          ),
+                          trailing: const Icon(Icons.drag_handle),
+                        );
+                      },
+                    )
+                    .toList(),
               ),
             ),
           ),

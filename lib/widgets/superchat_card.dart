@@ -38,7 +38,7 @@ class _SuperChatCardState extends State<SuperChatCard> {
     super.initState();
   }
 
-  void timerCallback(dynamic e) {
+  void timerCallback(Timer e) {
     if (countdown <= 0) {
       widget.onExpire?.call();
       timer.cancel();

@@ -32,6 +32,7 @@ class Constant {
   static const String kDouyu = "douyu";
   static const String kHuya = "huya";
   static const String kDouyin = "douyin";
+  static const String kTwitch = "twitch";
 }
 
 class HomePageItem {
@@ -43,4 +44,30 @@ class HomePageItem {
     required this.title,
     required this.index,
   });
+}
+
+enum DownloadState {
+  notDownloaded,
+  downloading,
+  downloaded,
+}
+
+// 排序方法
+enum SortMethod {
+  watchDuration,
+  siteId,
+  recently,
+  userNameASC,
+  userNameDESC,
+}
+
+extension SortMethodStore on SortMethod {
+  String get storeValue => name;
+  static SortMethod fromStore(String? v) {
+    if (v == null) return SortMethod.watchDuration;
+    return SortMethod.values.firstWhere(
+      (e) => e.name == v,
+      orElse: () => SortMethod.watchDuration,
+    );
+  }
 }

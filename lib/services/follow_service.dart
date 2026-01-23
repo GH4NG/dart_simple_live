@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pinyin/pinyin.dart';
+import 'package:pool/pool.dart';
 import 'package:simple_live_app/app/constant.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/event_bus.dart';
@@ -14,6 +16,8 @@ import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/app/utils/duration_2str.dart';
+import 'package:simple_live_app/app/utils/dynamic_sort.dart';
+import 'package:simple_live_app/app/utils/string_normalizer.dart';
 import 'package:simple_live_app/models/db/follow_user.dart';
 import 'package:simple_live_app/models/db/follow_user_tag.dart';
 import 'package:simple_live_app/models/db/history.dart';
@@ -193,16 +197,9 @@ class FollowService extends GetxService {
     if (toRemove.isNotEmpty) {
       DBService.instance.updateFollowTag(tag);
     }
-    // 标签内排序
-    curTagFollowList.sort(
-      (a, b) {
-        if (a.liveStatus.value != b.liveStatus.value) {
-          return b.liveStatus.value.compareTo(a.liveStatus.value);
-        }
-        return b.watchDuration!.toDuration().compareTo(
-          a.watchDuration!.toDuration(),
-        );
-      },
+    listSortByMethod(
+      curTagFollowList,
+      AppSettingsController.instance.followSortMethod.value,
     );
   }
 
@@ -212,6 +209,15 @@ class FollowService extends GetxService {
 
   // 添加关注
   void addFollow(FollowUser follow) {
+    // follow变动过程中romanName统一变化
+    String romanName = "";
+    if (follow.remark != null && follow.remark!.isNotEmpty) {
+      romanName = PinyinHelper.getShortPinyin(follow.romanName!);
+    } else {
+      romanName = PinyinHelper.getShortPinyin(follow.userName);
+    }
+    follow.romanName = romanName.normalize();
+
     DBService.instance.addFollow(follow);
   }
 
@@ -299,20 +305,28 @@ class FollowService extends GetxService {
       // 静态权重
       const double wDuration = 0.5;
       const double wRecency = 0.5;
+      // 在线降权，离线增权
+      const double wOnline = 0.3;
+      const double wOffline = 1 - wOnline;
 
+      // 动态权重
       double normDurationA =
           a.watchDuration!.toDuration().inSeconds.toDouble() /
           maxDurationInSeconds;
       int rankA = historyRankMap[a.id] ?? maxRank;
       double normRecencyA = (maxRank - rankA).toDouble() / maxRank;
-      double scoreA = (wDuration * normDurationA) + (wRecency * normRecencyA);
+      double scoreA =
+          ((wDuration * normDurationA) + (wRecency * normRecencyA)) *
+          (a.liveStatus.value == 2 ? wOnline : wOffline);
 
       double normDurationB =
           b.watchDuration!.toDuration().inSeconds.toDouble() /
           maxDurationInSeconds;
       int rankB = historyRankMap[b.id] ?? maxRank;
       double normRecencyB = (maxRank - rankB).toDouble() / maxRank;
-      double scoreB = (wDuration * normDurationB) + (wRecency * normRecencyB);
+      double scoreB =
+          ((wDuration * normDurationB) + (wRecency * normRecencyB)) *
+          (b.liveStatus.value == 2 ? wOnline : wOffline);
 
       return scoreB.compareTo(scoreA);
     });
@@ -321,10 +335,12 @@ class FollowService extends GetxService {
   Future<void> startUpdateStatus({int? cycle}) async {
     List<FollowUser> usersToUpdate;
     final totalUsers = followList.length;
+    final douyinCount = followList.where((x) => x.siteId == 'douyin').length;
 
-    if (cycle != null && totalUsers > 100) {
+    //tips: 噪音用户画像（高风险平台：90%; 多次手刷; 单高关注数>50; 频繁切直播间; 不登录反复高危操作; 移动宽带用户; 反复关注取消; 多ip切换; 特殊地区风控; 多端在线请求; 黑号）
+    if (cycle != null && (totalUsers > 100 || douyinCount > 50)) {
       // 简单28
-      final topNCount = (totalUsers * 0.2).round(); // Top 50%
+      final topNCount = (totalUsers * 0.2).round(); // Top 20%
       final bottomNCount = (totalUsers * 0.2).round(); // Bottom 20%
       final middlePartEndIndex = totalUsers - bottomNCount;
       multiRoundPriority();
@@ -349,7 +365,6 @@ class FollowService extends GetxService {
         );
       }
     }
-
     _totalToUpdate = usersToUpdate.length;
     updatedCount = 0;
     updating.value = true;
@@ -363,46 +378,29 @@ class FollowService extends GetxService {
     var threadCount =
         AppSettingsController.instance.updateFollowThreadCount.value;
 
+    var pool = Pool(threadCount);
     var tasks = <Future>[];
-    for (var i = 0; i < threadCount; i++) {
-      tasks.add(
-        Future(() async {
-          var start = i * usersToUpdate.length ~/ threadCount;
-          var end = (i + 1) * usersToUpdate.length ~/ threadCount;
 
-          if (end > usersToUpdate.length) {
-            end = usersToUpdate.length;
-          }
-          var items = usersToUpdate.sublist(start, end);
-          for (var item in items) {
-            await updateLiveStatus(item);
-          }
-        }),
-      );
+    for (var user in usersToUpdate) {
+      tasks.add(pool.withResource(() => updateLiveInformation(user)));
     }
     await Future.wait(tasks);
+    await pool.close();
   }
 
-  Future updateLiveStatus(FollowUser item) async {
+  Future updateLiveInformation(FollowUser item) async {
     try {
       var site = Sites.allSites[item.siteId]!;
-      // 先只查状态
-      var isLiving = await site.liveSite.getLiveStatus(roomId: item.roomId);
-      item.liveStatus.value = isLiving ? 2 : 1;
-      if (item.liveStatus.value == 2) {
-        // 只有正在直播时才查详细信息
-        var detail = await site.liveSite.getRoomDetail(roomId: item.roomId);
-        item
-          ..liveTitle = detail.title
-          ..liveAreaName = detail.areaName
-          ..liveStartTime = detail.showTime;
-      } else {
-        item.liveStartTime = null;
-      }
+      LiveRoomDetail detail = await site.liveSite.getRoomDetail(
+        roomId: item.roomId,
+      );
+      item.liveStatus.value = detail.status ? 2 : 1;
+      item.cover.value = detail.status ? detail.cover : "";
+      item.liveTitle.value = detail.title;
+      item.liveAreaName.value = detail.areaName;
+      item.online.value = detail.online;
     } catch (e) {
       Log.logPrint(e);
-      item.liveStatus.value = 0;
-      item.liveStartTime = null;
     } finally {
       await _lock.synchronized(() {
         updatedCount++;
@@ -415,19 +413,61 @@ class FollowService extends GetxService {
   }
 
   void filterData() {
-    followList.sort(
-      (a, b) {
-        if (a.liveStatus.value != b.liveStatus.value) {
-          return b.liveStatus.value.compareTo(a.liveStatus.value);
-        }
-        return b.watchDuration!.toDuration().compareTo(
-          a.watchDuration!.toDuration(),
-        );
-      },
-    );
+    liveListSort();
     liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
     notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
     _updatedListController.add(0);
+  }
+
+  void liveListSort() {
+    listSortByMethod(
+      followList,
+      AppSettingsController.instance.followSortMethod.value,
+    );
+    liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
+    notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
+  }
+
+  void listSortByMethod(List<FollowUser> list, SortMethod sortMethod) {
+    var liveCondition = SortCondition<FollowUser>(
+      valueGetter: (item) => item.liveStatus.value, // Rx<int>
+      ascending: false,
+    );
+    var watchDurationCondition = SortCondition<FollowUser>(
+      valueGetter: (item) => item.watchDuration?.toDuration() ?? Duration.zero,
+      ascending: false,
+    );
+    var siteIdCondition = SortCondition<FollowUser>(
+      valueGetter: (item) {
+        final order = AppSettingsController.instance.siteSort;
+        // 返回索引作为 Comparable
+        return order.indexOf(item.siteId);
+      },
+    );
+    var recentlyCondition = SortCondition<FollowUser>(
+      valueGetter: (item) => item.addTime,
+      ascending: false,
+    );
+    var userNameASCCondition = SortCondition<FollowUser>(
+      valueGetter: (item) => item.romanName ?? "",
+      ascending: true,
+    );
+    var userNameDESCCondition = SortCondition<FollowUser>(
+      valueGetter: (item) => item.romanName ?? "",
+      ascending: false,
+    );
+    switch (sortMethod) {
+      case SortMethod.watchDuration:
+        list.dynamicSort([liveCondition, watchDurationCondition]);
+      case SortMethod.siteId:
+        list.dynamicSort([liveCondition, siteIdCondition]);
+      case SortMethod.recently:
+        list.dynamicSort([liveCondition, recentlyCondition]);
+      case SortMethod.userNameASC:
+        list.dynamicSort([liveCondition, userNameASCCondition]);
+      case SortMethod.userNameDESC:
+        list.dynamicSort([liveCondition, userNameDESCCondition]);
+    }
   }
 
   Future<void> exportFile() async {
@@ -475,18 +515,12 @@ class FollowService extends GetxService {
       var file = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
-        withData: true,
       );
-      if (file == null || file.files.isEmpty) return;
-
-      var bytes = file.files.single.bytes;
-      if (bytes == null) {
-        SmartDialog.showToast("文件内容为空");
+      if (file == null) {
         return;
       }
-
-      var jsonString = utf8.decode(bytes);
-      await inputJson(jsonString);
+      var jsonFile = File(file.files.single.path!);
+      await inputJson(await jsonFile.readAsString());
       SmartDialog.showToast("导入成功");
     } catch (e) {
       Log.logPrint(e);

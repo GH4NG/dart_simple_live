@@ -3,18 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:simple_live_core/src/common/http_client.dart';
-import 'package:simple_live_core/src/platforms/douyu/douyu_danmaku.dart';
-import 'package:simple_live_core/src/interface/live_danmaku.dart';
-import 'package:simple_live_core/src/interface/live_site.dart';
-import 'package:simple_live_core/src/model/live_anchor_item.dart';
-import 'package:simple_live_core/src/model/live_category.dart';
-import 'package:simple_live_core/src/model/live_message.dart';
-import 'package:simple_live_core/src/model/live_play_url.dart';
-import 'package:simple_live_core/src/model/live_room_item.dart';
-import 'package:simple_live_core/src/model/live_search_result.dart';
-import 'package:simple_live_core/src/model/live_room_detail.dart';
-import 'package:simple_live_core/src/model/live_play_quality.dart';
-import 'package:simple_live_core/src/model/live_category_result.dart';
+import 'package:simple_live_core/simple_live_core.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:simple_live_core/src/platforms/douyu/douyu_sign.dart';
 
@@ -222,24 +211,6 @@ class DouyuSite implements LiveSite {
     );
     var crptext = json.decode(jsEncResult)["data"]["room$roomId"].toString();
 
-    if (showTime != null && showTime.isNotEmpty) {
-      try {
-        int startTimeStamp = int.parse(showTime);
-        int currentTimeStamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        int durationInSeconds = currentTimeStamp - startTimeStamp;
-
-        int hours = durationInSeconds ~/ 3600;
-        int minutes = (durationInSeconds % 3600) ~/ 60;
-        int seconds = durationInSeconds % 60;
-
-        String formattedDuration =
-            '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-        print('斗鱼直播间 $roomId 开播时长: $formattedDuration');
-      } catch (e) {
-        print('计算开播时长出错: $e');
-      }
-    }
-
     return LiveRoomDetail(
       cover: roomInfo["room_pic"].toString(),
       online: int.tryParse(roomInfo["room_biz_all"]["hot"].toString()) ?? 0,
@@ -267,7 +238,11 @@ class DouyuSite implements LiveSite {
     var did = generateRandomString(32);
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchShow",
-      queryParameters: {"kw": keyword, "page": page, "pageSize": 20},
+      queryParameters: {
+        "kw": keyword,
+        "page": page,
+        "pageSize": 20,
+      },
       header: {
         'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',

@@ -64,6 +64,48 @@ class LiveRoomDetail {
     this.showTime,
   });
 
+  LiveRoomDetail copyWith({
+    String? roomId,
+    String? title,
+    String? cover,
+    String? areaName,
+    String? userName,
+    String? userAvatar,
+    int? online,
+    String? introduction,
+    String? notice,
+    bool? status,
+    dynamic data,
+    dynamic danmakuData,
+    String? url,
+    bool? isRecord,
+  }) {
+    return LiveRoomDetail(
+      roomId: roomId ?? this.roomId,
+      title: title ?? this.title,
+      cover: cover ?? this.cover,
+      areaName: areaName ?? this.areaName,
+      userName: userName ?? this.userName,
+      userAvatar: userAvatar ?? this.userAvatar,
+      online: online ?? this.online,
+      introduction: introduction ?? this.introduction,
+      notice: notice ?? this.notice,
+      status: status ?? this.status,
+      data: data ?? this.data,
+      danmakuData: danmakuData ?? this.danmakuData,
+      isRecord: isRecord ?? this.isRecord,
+      url: url ?? this.url,
+    );
+  }
+
+  LiveRoomDetail updateData(dynamic newData) {
+    return copyWith(data: newData);
+  }
+
+  LiveRoomDetail updateDanmakuData(dynamic newDanmakuData) {
+    return copyWith(danmakuData: newDanmakuData);
+  }
+
   @override
   String toString() {
     return json.encode({
@@ -77,7 +119,7 @@ class LiveRoomDetail {
       "introduction": introduction,
       "notice": notice,
       "status": status,
-      "data": data.toString(),
+      "data": data,
       "danmakuData": danmakuData.toString(),
       "url": url,
       "isRecord": isRecord,
