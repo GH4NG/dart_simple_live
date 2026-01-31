@@ -20,7 +20,7 @@ dependencies:
     # 框架、工具
     archive: ^4.0.7 # 文件压缩
     get: ^4.7.2 # 状态管理、路由管理、国际化
-    dio: ^5.9.0 # 网络请求
+    dio: ^5.9.1 # 网络请求
     hive: ^2.2.3 # 持久化存储
     hive_flutter: ^1.1.0 # 持久化存储
     logger: ^2.6.2 # 日志
@@ -53,13 +53,13 @@ dependencies:
     url_launcher: ^6.3.1 # 打开链接
     share_plus: ^12.0.1 # 分享
     path_provider: ^2.1.5 # 常用路径
-    cross_file: ^0.3.5+1 # 跨平台文件
+    cross_file: ^0.3.5+2 # 跨平台文件
     permission_handler: ^12.0.1 # 权限处理
     image_gallery_saver_plus: ^4.0.1 # 图片保存到相册
     screen_brightness: ^2.1.7 # 亮度控制
     auto_orientation_v2: ^2.3.7 # 屏幕方向
     wakelock_plus: ^1.3.3 # 屏幕常亮
-    file_picker: ^10.3.8 # 文件选择
+    file_picker: ^10.3.10 # 文件选择
     window_manager: ^0.5.1 # 窗口管理
     floating: ^6.0.0 # PIP 画中画
     flutter_inappwebview:
@@ -140,15 +140,19 @@ dependency_overrides:
             path: ./libs/macos/media_kit_libs_macos_video
 
 dev_dependencies:
-    flutter_lints: ^6.0.0
-    build_runner: ^2.4.13
-    hive_generator: ^2.0.0
-    flutter_launcher_icons: ^0.14.4
-    flutter_native_splash: ^2.4.6
     flutter_test:
         sdk: flutter
-    integration_test:
-        sdk: flutter
+
+    # The "flutter_lints" package below contains a set of recommended lints to
+    # encourage good coding practices. The lint set provided by the package is
+    # activated in the `analysis_options.yaml` file located at the root of your
+    # package. See that file for information about deactivating specific lint
+    # rules and activating additional ones.
+    flutter_lints: ^6.0.0
+    flutter_launcher_icons: ^0.14.4
+    # hive_generator: ^2.0.1
+    build_runner: ^2.10.3
+    flutter_native_splash: ^2.4.6
 
 flutter_launcher_icons:
     android: 'ic_launcher'

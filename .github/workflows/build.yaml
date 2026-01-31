@@ -9,7 +9,7 @@ on:
     pull_request:
         paths:
             - pubspec.yaml
-            - .github/workflows/build.yml
+            - .github/workflows/build.yaml
             - .fvmrc
         types:
             - opened
@@ -27,6 +27,9 @@ on:
                     - release
                     - nightly
 
+permissions:
+    contents: write
+
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
@@ -36,17 +39,21 @@ env:
     NIGHTLY_TAG: nightly
 
 jobs:
-    check-trigger:
+    prepare:
+        name: 准备构建
         runs-on: ubuntu-latest
         outputs:
             should_run: ${{ steps.check.outputs.should_run }}
             build_type: ${{ steps.check.outputs.build_type }}
+            version_name: ${{ steps.fetch.outputs.version_name }}
+            flutter_version: ${{ steps.fetch.outputs.flutter_version }}
+            nightly_version: ${{ steps.fetch.outputs.nightly_version }}
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+            - name: 签出代码
+              uses: actions/checkout@v6
               with: { fetch-depth: 0 }
 
-            - name: Check if should run and determine build type
+            - name: 检查构建类型
               id: check
               run: |
                   if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -54,18 +61,15 @@ jobs:
                   elif [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
                     BUILD_TYPE="release"
                   elif [[ "${{ github.event_name }}" == "schedule" ]]; then
-                    # Check if there were commits to develop in the last 24 hours
-                    git checkout develop
                     COMMITS_LAST_24H=$(git log --since="24 hours ago" --oneline | wc -l)
                     if [[ $COMMITS_LAST_24H -gt 0 ]]; then
                       BUILD_TYPE="nightly"
                     else
-                      echo "No commits to develop in the last 24 hours, skipping nightly build"
                       echo "should_run=false" >> $GITHUB_OUTPUT
                       exit 0
                     fi
                   else
-                    # For PRs and other events, build but don't release
+                    echo "should_run=false" >> $GITHUB_OUTPUT
                     BUILD_TYPE="development"
                   fi
 
@@ -73,21 +77,7 @@ jobs:
                   echo "should_run=true" >> $GITHUB_OUTPUT
                   echo "Build type determined: ${BUILD_TYPE}"
 
-    fetch-info:
-        needs: [check-trigger]
-        if: needs.check-trigger.outputs.should_run == 'true'
-        runs-on: ubuntu-latest
-        outputs:
-            version_name: ${{ steps.fetch.outputs.version_name }}
-            flutter_version: ${{ steps.fetch.outputs.flutter_version }}
-            nightly_version: ${{ steps.fetch.outputs.nightly_version }}
-            build_type: ${{ needs.check-trigger.outputs.build_type }}
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with: { fetch-depth: 0 }
-
-            - name: Fetch version name and create nightly version
+            - name: 获取版本信息
               id: fetch
               run: |
                   VERSION=$(grep '^version:' pubspec.yaml | cut -d ':' -f2 | cut -d '+' -f1 | tr -d ' ')
@@ -96,184 +86,99 @@ jobs:
                   echo "version_name=$VERSION" >> $GITHUB_OUTPUT
                   echo "flutter_version=$FLUTTER_VERSION" >> $GITHUB_OUTPUT
 
-                  if [[ "${{ needs.check-trigger.outputs.build_type }}" == "nightly" ]]; then
+                  if [[ "${{ steps.check.outputs.build_type }}" == "nightly" ]]; then
                     echo "nightly_version=${VERSION}-nightly" >> $GITHUB_OUTPUT
                   fi
 
     build-app:
-        needs: [fetch-info]
+        name: 构建应用(${{ matrix.platform }})
+        needs: [prepare]
+        if: needs.prepare.outputs.should_run == 'true'
         strategy:
             matrix:
-                platform: [linux, windows, macos, android, ios]
                 include:
                     - platform: linux
                       os: ubuntu-latest
-                      targets: appimage,deb,zip
+
                     - platform: windows
                       os: windows-2022
-                      targets: exe,msix,zip
+
                     - platform: macos
                       os: macos-latest
-                      targets: dmg,zip
+
                     - platform: android
                       os: ubuntu-latest
-                      targets: apk
+
                     - platform: ios
                       os: macos-latest
-                      targets: ipa
 
         runs-on: ${{ matrix.os }}
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
 
-            - name: Set up Flutter
+        steps:
+            - name: 检出代码
+              uses: actions/checkout@v6
+
+            - name: 配置 Flutter
               uses: subosito/flutter-action@v2
               with:
                   channel: stable
-                  flutter-version: ${{ needs.fetch-info.outputs.flutter_version }}
+                  flutter-version: ${{ needs.prepare.outputs.flutter_version }}
+                  cache: true
 
-            - name: Set up fastforge
+            - name: 配置 fastforge
               run: |
-                  git clone -b fix/duplicate-library https://github.com/GH4NG/fastforge.git
+                  git clone https://github.com/GH4NG/fastforge.git
                   cd fastforge
                   dart pub global activate melos
                   melos bootstrap
                   melos run activate
 
-            - name: Get dependencies
+            - name: 写入 Android keystore
+              if: startsWith(matrix.platform,'android')
               run: |
-                  flutter pub get
+                  echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/key.jks
+                  echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+                  echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
+                  echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
 
-            # Platform dependencies
-            - name: Get packages
-              if: matrix.platform == 'linux'
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y ninja-build libgtk-3-dev libmpv-dev patchelf cmake clang libfuse2 pkg-config liblzma-dev mpv libasound2-dev locate libc++1 fuse lld binutils
+            - name: 安装项目依赖
+              run: dart run scripts/prebuild.dart
 
-                  # Install AppImageTool
-                  wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-                  chmod +x appimagetool
-                  sudo mv appimagetool /usr/local/bin/
-
-            - name: Add Chinese language file for Inno Setup
-              if: matrix.platform == 'windows'
-              run: Copy-Item "windows/packaging/exe/ChineseSimplified.isl" "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-
-            - name: Get packages
-              if: matrix.platform == 'macos'
-              run: npm install -g appdmg
-
-            - name: Write key
-              if: matrix.platform == 'android'
-              run: |
-                  if [ ! -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-                    echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/key.jks
-                    echo storeFile='key.jks' >> android/key.properties
-                    echo storePassword='${{ secrets.STORE_PASSWORD }}' >> android/key.properties
-                    echo keyAlias='${{ secrets.KEY_ALIAS }}' >> android/key.properties
-                    echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> android/key.properties
-                  fi
-
-            - name: Build App
-              if: matrix.platform != 'windows'
-              shell: bash
-              run: |
-                  if [[ "${{ matrix.platform }}" == "ios" ]]; then
-                    flutter build ios --release --no-codesign
-                    cd build/ios/iphoneos
-                    mkdir -p Payload
-                    mv Runner.app Payload/
-                    zip -r iOS.ipa Payload
-                  elif [[ "${{ matrix.platform }}" == "android" ]]; then
-                    fastforge package --platform android --targets ${{ matrix.targets }} --flutter-build-args=split-per-abi
-                  else
-                    fastforge package --platform ${{ matrix.platform }} --targets ${{ matrix.targets }}
-                  fi
-
-            - name: Build App
-              if: matrix.platform == 'windows'
-              shell: pwsh
-              run: fastforge package --platform $env:MATRIX_PLATFORM --targets $env:MATRIX_TARGETS
+            - name: 构建应用
+              run: dart run scripts/build.dart ${{ matrix.platform }}
               env:
-                  MATRIX_PLATFORM: ${{ matrix.platform }}
-                  MATRIX_TARGETS: ${{ matrix.targets }}
+                  CHANNEL: ${{ needs.prepare.outputs.build_type == 'nightly' && 'nightly' || 'release' }}
 
-            - name: Rename artifacts
-              shell: bash
-              run: |
-                  VERSION="${{ needs.fetch-info.outputs.build_type == 'nightly' && needs.fetch-info.outputs.nightly_version || needs.fetch-info.outputs.version_name }}"
-                  PLATFORM="${{ matrix.platform }}"
-                  APP="${APP_NAME}"
-                  OUT="renamed"
-                  mkdir -p "$OUT"
-
-                  # Android ABI rename
-                  if [[ "$PLATFORM" == "android" ]]; then
-                    APK_DIR="build/app/outputs/flutter-apk"
-
-                    declare -A ABI_MAP=(
-                      ["app-arm64-v8a-release.apk"]="arm64-v8a"
-                      ["app-armeabi-v7a-release.apk"]="armeabi-v7a"
-                      ["app-x86_64-release.apk"]="x86_64"
-                    )
-
-                    for FILE in "${!ABI_MAP[@]}"; do
-                      SRC="$APK_DIR/$FILE"
-                      if [[ -f "$SRC" ]]; then
-                        ABI="${ABI_MAP[$FILE]}"
-                        NEW="${APP}-android-${ABI}-${VERSION}.apk"
-                        cp "$SRC" "$OUT/$NEW"
-                      fi
-                    done
-                    exit 0
-                  fi
-
-                  # iOS
-                  if [[ "$PLATFORM" == "ios" ]]; then
-                    SRC="build/ios/iphoneos/iOS.ipa"
-                    NEW="${APP}-ios-${VERSION}.ipa"
-                    cp "$SRC" "$OUT/$NEW"
-                    exit 0
-                  fi
-
-                  # Other platforms
-                  for f in dist/**/*; do
-                    [[ -f "$f" ]] || continue
-                    EXT="${f##*.}"
-                    NEW="${APP}-${PLATFORM}-${VERSION}.${EXT}"
-                    cp "$f" "$OUT/$NEW"
-                  done
-
-            - name: Upload Artifacts
-              uses: actions/upload-artifact@v4
+            - name: 上传构建产物
+              uses: actions/upload-artifact@v6
               with:
-                  name: simple_live_app-${{ matrix.platform }}
-                  path: renamed/*
+                  name: ${{ matrix.platform }}
+                  path: dist/**/*
 
     create-release:
-        needs: [fetch-info, build-app]
+        name: 发布构建
+        needs: [prepare, build-app]
         runs-on: ubuntu-latest
-        if: needs.fetch-info.outputs.build_type == 'release' || needs.fetch-info.outputs.build_type == 'nightly'
+        if: needs.prepare.outputs.build_type == 'release' || needs.prepare.outputs.build_type == 'nightly'
         permissions:
             contents: write
+
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+            - name: 检出代码
+              uses: actions/checkout@v6
               with: { fetch-depth: 0 }
 
-            - name: Set version variables
+            - name: 设置版本变量
               id: ver
               run: |
-                  if [[ "${{ needs.fetch-info.outputs.build_type }}" == "nightly" ]]; then
-                    echo "version=${{ needs.fetch-info.outputs.nightly_version }}" >> $GITHUB_OUTPUT
+                  if [[ "${{ needs.prepare.outputs.build_type }}" == "nightly" ]]; then
+                    echo "version=${{ needs.prepare.outputs.nightly_version }}" >> $GITHUB_OUTPUT
                   else
-                    echo "version=${{ needs.fetch-info.outputs.version_name }}" >> $GITHUB_OUTPUT
+                    echo "version=${{ needs.prepare.outputs.version_name }}" >> $GITHUB_OUTPUT
                   fi
 
-            - name: Delete existing nightly release
-              if: needs.fetch-info.outputs.build_type == 'nightly'
+            - name: 删除现有 nightly 发布
+              if: needs.prepare.outputs.build_type == 'nightly'
               run: |
                   # Delete existing nightly release and tag with better error handling
                   echo "Checking for existing nightly release..."
@@ -292,8 +197,8 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Generate changelog
-              if: needs.fetch-info.outputs.build_type == 'nightly'
+            - name: 生成变更日志
+              if: needs.prepare.outputs.build_type == 'nightly'
               id: changelog
               run: |
                   # Get the latest stable release tag for comparison
@@ -339,21 +244,21 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Download Artifacts
-              uses: actions/download-artifact@v4
+            - name: 下载构建产物
+              uses: actions/download-artifact@v7
               with:
                   path: artifacts
 
-            - name: Create Release
+            - name: 创建 GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ needs.fetch-info.outputs.build_type == 'nightly' && env.NIGHTLY_TAG || github.ref_name }}
-                  name: ${{ needs.fetch-info.outputs.build_type == 'nightly' && format('Nightly Build - {0}', steps.ver.outputs.version) || '' }}
-                  body_path: ${{ needs.fetch-info.outputs.build_type == 'nightly' && 'changelog.md' || '' }}
-                  draft: ${{ needs.fetch-info.outputs.build_type == 'release' }}
-                  prerelease: ${{ needs.fetch-info.outputs.build_type == 'nightly' }}
-                  make_latest: ${{ needs.fetch-info.outputs.build_type == 'release' }}
-                  generate_release_notes: ${{ needs.fetch-info.outputs.build_type == 'release' }}
+                  tag_name: ${{ needs.prepare.outputs.build_type == 'nightly' && env.NIGHTLY_TAG || github.ref_name }}
+                  name: ${{ needs.prepare.outputs.build_type == 'nightly' && format('Nightly Build - {0}', steps.ver.outputs.version) || '' }}
+                  body_path: ${{ needs.prepare.outputs.build_type == 'nightly' && 'changelog.md' || '' }}
+                  draft: ${{ needs.prepare.outputs.build_type == 'release' }}
+                  prerelease: ${{ needs.prepare.outputs.build_type == 'nightly' }}
+                  make_latest: ${{ needs.prepare.outputs.build_type == 'release' }}
+                  generate_release_notes: ${{ needs.prepare.outputs.build_type == 'release' }}
                   fail_on_unmatched_files: true
                   files: artifacts/**/*
               env:
