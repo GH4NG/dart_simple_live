@@ -176,9 +176,6 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                   unit: "%",
                   onChanged: (e) {
                     controller.setDanmuOpacity(e / 100.0);
-                    updateDanmuOption(
-                      danmakuController?.option.copyWith(opacity: e / 100.0),
-                    );
                   },
                 ),
               ),

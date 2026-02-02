@@ -640,38 +640,46 @@ Widget buildControls(BuildContext context, LiveRoomController controller) {
 
 Widget buildDanmuView(BuildContext context, LiveRoomController controller) {
   var padding = MediaQuery.of(context).padding;
-  controller.danmakuView ??= DanmakuScreen(
-    key: controller.globalDanmuKey,
-    createdController: controller.initDanmakuController,
-    option: DanmakuOption(
-      fontSize: AppSettingsController.instance.danmuSize.value,
-      fontWeight: AppSettingsController.instance.danmuFontWeight.value,
-      area: AppSettingsController.instance.danmuArea.value,
-      duration: AppSettingsController.instance.danmuSpeed.value,
-      opacity: AppSettingsController.instance.danmuOpacity.value,
-      strokeWidth: AppSettingsController.instance.danmuStrokeWidth.value,
-      lineHeight: AppSettingsController.instance.danmuLineHeight.value,
-      safeArea: false,
-    ),
-  );
 
   return Positioned.fill(
     top: padding.top,
     bottom: padding.bottom,
-    child: Obx(
-      () => Offstage(
-        offstage: !controller.showDanmakuState.value,
-        child: Padding(
-          padding: controller.fullScreenState.value
-              ? EdgeInsets.only(
-                  top: AppSettingsController.instance.danmuTopMargin.value,
-                  bottom:
-                      AppSettingsController.instance.danmuBottomMargin.value,
-                )
-              : EdgeInsets.zero,
-          child: controller.danmakuView!,
-        ),
-      ),
+    child: LayoutBuilder(
+      builder: (ctx, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        return Obx(
+          () {
+            final option = DanmakuOption(
+              fontSize: AppSettingsController.instance.danmuSize.value,
+              fontWeight: AppSettingsController.instance.danmuFontWeight.value,
+              area: AppSettingsController.instance.danmuArea.value,
+              duration: AppSettingsController.instance.danmuSpeed.value,
+              strokeWidth:
+                  AppSettingsController.instance.danmuStrokeWidth.value,
+              lineHeight: AppSettingsController.instance.danmuLineHeight.value,
+              safeArea: false,
+            );
+            return AnimatedOpacity(
+              opacity: controller.showDanmakuState.value
+                  ? AppSettingsController.instance.danmuOpacity.value
+                  : 0,
+              duration: const Duration(milliseconds: 100),
+              child: ClipRect(
+                child: SizedBox(
+                  width: size.width,
+                  height: size.height,
+                  child: DanmakuScreen(
+                    key: controller.globalDanmuKey,
+                    createdController: controller.initDanmakuController,
+                    option: option,
+                    size: size,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     ),
   );
 }
