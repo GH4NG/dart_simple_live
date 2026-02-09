@@ -71,7 +71,7 @@ class DouyinSite implements LiveSite {
 
     var renderData =
         RegExp(
-          r'\{\\"pathname\\":\\"\/\\",\\"categoryData.*?\]\\n',
+          r'\{\\"pathname\\":\\"\/\\",\\"categoryData.*?\],',
         ).firstMatch(result)?.group(0) ??
         "";
     var renderDataJson = json.decode(
@@ -79,7 +79,7 @@ class DouyinSite implements LiveSite {
           .trim()
           .replaceAll('\\"', '"')
           .replaceAll(r"\\", r"\")
-          .replaceAll(']\\n', ""),
+          .replaceAll('],', ""),
     );
 
     for (var item in renderDataJson["categoryData"]) {
