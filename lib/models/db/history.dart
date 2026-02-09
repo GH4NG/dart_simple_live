@@ -38,7 +38,8 @@ class History implements Mappable {
   @HiveField(6)
   String? watchDuration; // "00:00:00"
 
-  Duration get duration => watchDuration!.toDuration(); //for filter
+  Duration get duration =>
+      (watchDuration ?? "00:00:00").toDuration(); //for filter
 
   factory History.fromJson(Map<String, dynamic> json) => History(
     id: json["id"],
