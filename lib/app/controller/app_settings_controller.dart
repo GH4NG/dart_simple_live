@@ -160,6 +160,11 @@ class AppSettingsController extends GetxController {
       true,
     );
 
+    showKeyframe.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kShowKeyframe,
+      false,
+    );
+
     // ignore: invalid_use_of_protected_member
     shieldList.value = LocalStorageService.instance.shieldBox.values.toSet();
 
@@ -558,6 +563,16 @@ class AppSettingsController extends GetxController {
   }
 
   var playerShowSuperChat = true.obs;
+
+  var showKeyframe = false.obs;
+  void setShowKeyframe(bool e) {
+    showKeyframe.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kShowKeyframe,
+      e,
+    );
+  }
+
   void setPlayerShowSuperChat(bool e) {
     playerShowSuperChat.value = e;
     LocalStorageService.instance.setValue(

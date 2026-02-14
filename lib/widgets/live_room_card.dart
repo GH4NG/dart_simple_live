@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/routes/app_navigation.dart';
@@ -32,7 +33,12 @@ class LiveRoomCard extends StatelessWidget {
                   topRight: Radius.circular(8),
                 ),
                 child: NetImage(
-                  item.cover,
+                  AppSettingsController.instance.showKeyframe.value &&
+                          item.keyframe != null &&
+                          item.keyframe!.isNotEmpty
+                      ? item.keyframe!
+                      : item.cover,
+
                   fit: BoxFit.cover,
                   height: 110,
                   width: double.infinity,

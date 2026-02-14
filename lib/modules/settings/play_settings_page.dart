@@ -142,6 +142,17 @@ class PlaySettingsPage extends GetView<AppSettingsController> {
                     },
                   ),
                 ),
+                AppStyle.divider,
+                Obx(
+                  () => SettingsSwitch(
+                    title: "封面显示关键帧",
+                    subtitle: "显示直播实时画面而非封面图",
+                    value: controller.showKeyframe.value,
+                    onChanged: (e) {
+                      controller.setShowKeyframe(e);
+                    },
+                  ),
+                ),
               ],
             ),
           ),
