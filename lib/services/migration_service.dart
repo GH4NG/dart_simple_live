@@ -45,7 +45,7 @@ class MigrationService {
         }
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -56,7 +56,7 @@ class MigrationService {
       LocalStorageService.kHiveDbVer,
       10708,
     );
-    Log.i("curDBVer: $curDBVer, curAppVer: $curAppVer");
+    SimpleLiveLogger().i("curDBVer: $curDBVer, curAppVer: $curAppVer");
     if (curDBVer <= 10708) {
       LocalStorageService.instance.settingsBox.delete(
         LocalStorageService.kWebDAVLastUploadTime,
@@ -96,7 +96,7 @@ class MigrationService {
         }
         DBService.instance.addFollow(follow);
       }
-      Log.i("transfer follow.name to roman is down!");
+      SimpleLiveLogger().i("transfer follow.name to roman is down!");
     }
     LocalStorageService.instance.settingsBox.put(
       LocalStorageService.kHiveDbVer,

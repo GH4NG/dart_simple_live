@@ -229,7 +229,7 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
       try {
         await ScreenBrightness.instance.resetApplicationScreenBrightness();
       } catch (e) {
-        Log.logPrint(e);
+        SimpleLiveLogger().e(e);
       }
     }
   }
@@ -405,7 +405,7 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         SmartDialog.showToast("已保存截图至 $path");
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("截图失败");
     } finally {
       SmartDialog.dismiss(status: SmartStatus.loading);
@@ -455,7 +455,7 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         danmakuController?.clear();
         showDanmakuState.value = danmakuStateBeforePIP;
       }
-      Log.w(event.toString());
+      SimpleLiveLogger().w(event.toString());
     });
   }
 }
@@ -571,7 +571,7 @@ mixin PlayerGestureControlMixin
     //String text = "";
     //double value = 0.0;
 
-    Log.logPrint("$verStartPosition/${e.globalPosition.dy}");
+    SimpleLiveLogger().d("$verStartPosition/${e.globalPosition.dy}");
 
     if (leftVerticalDrag) {
       setGestureBrightness(e.globalPosition.dy);
@@ -617,7 +617,7 @@ mixin PlayerGestureControlMixin
   }
 
   Future<void> _realSetVolume(int volume) async {
-    Log.logPrint("Setting volume: $volume");
+    SimpleLiveLogger().d("Setting volume: $volume");
     await VolumeController.instance.setVolume(volume / 100);
   }
 
@@ -633,7 +633,7 @@ mixin PlayerGestureControlMixin
       ScreenBrightness.instance.setApplicationScreenBrightness(seek);
 
       gestureTipText.value = "亮度 ${(seek * 100).toInt()}%";
-      Log.logPrint(value);
+      SimpleLiveLogger().d(value);
     } else {
       value = ((dy - verStartPosition) / (Get.height * 0.5));
       var seek = value.abs() + _currentBrightness;
@@ -643,7 +643,7 @@ mixin PlayerGestureControlMixin
 
       ScreenBrightness.instance.setApplicationScreenBrightness(seek);
       gestureTipText.value = "亮度 ${(seek * 100).toInt()}%";
-      Log.logPrint(value);
+      SimpleLiveLogger().d(value);
     }
   }
 

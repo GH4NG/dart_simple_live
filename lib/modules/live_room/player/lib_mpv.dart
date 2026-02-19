@@ -208,7 +208,7 @@ class LibMPV extends BasePlayer {
     await playerLogSubscription?.cancel();
     if (settings.playerLogEnable.value) {
       playerLogSubscription = player.stream.log.listen((event) {
-        Log.d("MPV: ${event.toString()}");
+        SimpleLiveLogger().d("MPV: ${event.toString()}");
       });
     }
 

@@ -49,7 +49,7 @@ class BiliBiliQRLoginController extends GetxController {
       qrStatus.value = QRStatus.unscanned;
       startPoll();
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast(e.toString());
       qrStatus.value = QRStatus.failed;
     }
@@ -85,7 +85,7 @@ class BiliBiliQRLoginController extends GetxController {
         });
         if (cookies.isNotEmpty) {
           var cookieStr = cookies.join(";");
-          Log.i(cookieStr);
+          SimpleLiveLogger().i(cookieStr);
           BiliBiliAccountService.instance.setCookie(cookieStr);
           await BiliBiliAccountService.instance.loadUserInfo();
           Get.back();
@@ -94,13 +94,13 @@ class BiliBiliQRLoginController extends GetxController {
         qrStatus.value = QRStatus.expired;
         qrcodeKey = "";
         timer?.cancel();
-        Log.logPrint("二维码已失效，重新加载");
+        SimpleLiveLogger().d("二维码已失效，重新加载");
         loadQRCode();
       } else if (code == 86090) {
         qrStatus.value = QRStatus.scanned;
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast(e.toString());
     }
   }

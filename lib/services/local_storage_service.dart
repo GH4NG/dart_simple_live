@@ -234,10 +234,10 @@ class LocalStorageService extends GetxService {
   T getValue<T>(dynamic key, T defaultValue) {
     try {
       var value = settingsBox.get(key, defaultValue: defaultValue) as T;
-      Log.d("Get LocalStorage：$key\r\n$value");
+      SimpleLiveLogger().d("Get LocalStorage：$key-$value");
       return value;
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       return defaultValue;
     }
   }
@@ -245,21 +245,21 @@ class LocalStorageService extends GetxService {
   T? getNullValue<T>(dynamic key, T? defaultValue) {
     try {
       var value = settingsBox.get(key, defaultValue: defaultValue) as T?;
-      Log.d("Get LocalStorage：$key\r\n$value");
+      SimpleLiveLogger().d("Get LocalStorage：$key - $value");
       return value;
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       return defaultValue;
     }
   }
 
   Future setValue<T>(dynamic key, T value) async {
-    Log.d("Set LocalStorage：$key\r\n$value");
+    SimpleLiveLogger().d("Set LocalStorage：$key - $value");
     return await settingsBox.put(key, value);
   }
 
   Future removeValue<T>(dynamic key) async {
-    Log.d("Remove LocalStorage：$key");
+    SimpleLiveLogger().d("Remove LocalStorage：$key");
     return await settingsBox.delete(key);
   }
 

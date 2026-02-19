@@ -242,7 +242,7 @@ class FollowService extends GetxService {
       follow.watchDuration = history.watchDuration;
       addFollow(follow);
     }
-    Log.i("已更新当前播放的观看时长：${follow.watchDuration}");
+    SimpleLiveLogger().i("已更新当前播放的观看时长：${follow.watchDuration}");
   }
 
   void initTimer() {
@@ -255,7 +255,7 @@ class FollowService extends GetxService {
               AppSettingsController.instance.autoUpdateFollowDuration.value,
         ),
         (timer) {
-          CoreLog.i("Update Follow Timer - Cycle: $_refreshCycle");
+          SimpleLiveLogger().i("Update Follow Timer - Cycle: $_refreshCycle");
           loadData(updateStatus: true, cycle: _refreshCycle);
           _refreshCycle = (_refreshCycle + 1) % 2; // 2-cycle rotation
         },
@@ -348,19 +348,19 @@ class FollowService extends GetxService {
       final middleUsers = followList.sublist(topNCount, middlePartEndIndex);
       if (cycle == 0) {
         usersToUpdate = topNUsers;
-        CoreLog.i(
+        SimpleLiveLogger().i(
           "Update Follow: Cycle 0, updating top ${usersToUpdate.length}/$totalUsers users.",
         );
       } else {
         usersToUpdate = [...topNUsers, ...middleUsers];
-        CoreLog.i(
+        SimpleLiveLogger().i(
           "Update Follow: Cycle 1, updating top+middle ${usersToUpdate.length}/$totalUsers users.",
         );
       }
     } else {
       usersToUpdate = List.from(followList);
       if (cycle != null) {
-        CoreLog.i(
+        SimpleLiveLogger().i(
           "Update Follow: List <= 100, updating all ${usersToUpdate.length} users.",
         );
       }
@@ -400,7 +400,7 @@ class FollowService extends GetxService {
       item.liveAreaName.value = detail.areaName;
       item.online.value = detail.online;
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       await _lock.synchronized(() {
         updatedCount++;
@@ -500,7 +500,7 @@ class FollowService extends GetxService {
       await jsonFile.writeAsString(jsonText);
       SmartDialog.showToast("已导出关注列表");
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("导出失败：$e");
     }
   }
@@ -523,7 +523,7 @@ class FollowService extends GetxService {
       await inputJson(await jsonFile.readAsString());
       SmartDialog.showToast("导入成功");
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("导入失败:$e");
     } finally {
       loadData();

@@ -17,7 +17,7 @@ class SyncScanQRController extends BaseController {
 
     final barcode = capture.barcodes.first;
     final code = barcode.rawValue ?? '';
-    Log.d('Scan result: $code');
+    SimpleLiveLogger().d('Scan result: $code');
 
     pause = true;
     // 扫码成功后暂停摄像头

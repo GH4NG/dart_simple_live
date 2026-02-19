@@ -132,7 +132,7 @@ class RemoteSyncWebDAVController extends BaseController {
       bool value = await davClient.pingCompleter.future;
       notLogin.value = !value;
     } catch (e) {
-      Log.e("$e", StackTrace.current);
+      SimpleLiveLogger().e("$e", stackTrace: StackTrace.current);
       notLogin.value = true;
     }
   }
@@ -203,7 +203,7 @@ class RemoteSyncWebDAVController extends BaseController {
             uploadTime.millisecondsSinceEpoch,
           );
         } else {
-          Log.e("备份失败", StackTrace.current);
+          SimpleLiveLogger().e("备份失败", stackTrace: StackTrace.current);
           SmartDialog.showToast("上传失败");
         }
       } else {
@@ -283,7 +283,7 @@ class RemoteSyncWebDAVController extends BaseController {
       zipBytes = zipEncoder.encode(archive);
       profile.clearSync();
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("备份失败：$e");
     }
     return zipBytes;
@@ -327,9 +327,12 @@ class RemoteSyncWebDAVController extends BaseController {
             var user = FollowUser.fromJson(item);
             await DBService.instance.followBox.put(user.id, user);
           }
-          Log.i('已同步关注用户列表');
+          SimpleLiveLogger().i('已同步关注用户列表');
         } catch (e) {
-          Log.e('同步关注用户列表失败: $e', StackTrace.current);
+          SimpleLiveLogger().e(
+            '同步关注用户列表失败: $e',
+            stackTrace: StackTrace.current,
+          );
         }
       } else if (file.name == _userHistoriesJsonName && isSyncHistories.value) {
         try {
@@ -338,9 +341,12 @@ class RemoteSyncWebDAVController extends BaseController {
             // 完全同步机制
             await DBService.instance.addOrUpdateHistory(history);
           }
-          Log.i('已同步用户观看历史记录');
+          SimpleLiveLogger().i('已同步用户观看历史记录');
         } catch (e) {
-          Log.e('同步用户观看历史记录失败: $e', StackTrace.current);
+          SimpleLiveLogger().e(
+            '同步用户观看历史记录失败: $e',
+            stackTrace: StackTrace.current,
+          );
         }
       } else if (file.name == _userBlockedWordJsonName &&
           isSyncBlockWord.value) {
@@ -348,9 +354,9 @@ class RemoteSyncWebDAVController extends BaseController {
           for (var keyword in jsonData) {
             AppSettingsController.instance.addShieldList(keyword.trim());
           }
-          Log.i('已同步用户屏蔽词');
+          SimpleLiveLogger().i('已同步用户屏蔽词');
         } catch (e) {
-          Log.e('同步用户屏蔽词失败:$e', StackTrace.current);
+          SimpleLiveLogger().e('同步用户屏蔽词失败:$e', stackTrace: StackTrace.current);
         }
       } else if (file.name == _userAccountJsonName && isSyncAccount.value) {
         try {
@@ -360,9 +366,9 @@ class RemoteSyncWebDAVController extends BaseController {
           var douyinCookie = jsonData['douyin_cookie'];
           DouyinAccountService.instance.setCookie(douyinCookie);
           DouyinAccountService.instance.loadUserInfo();
-          Log.i('已同步用户平台账号');
+          SimpleLiveLogger().i('已同步用户平台账号');
         } catch (e) {
-          Log.e('同步用户平台账号失败：$e', StackTrace.current);
+          SimpleLiveLogger().e('同步用户平台账号失败：$e', stackTrace: StackTrace.current);
         }
       } else if (file.name == _userSettingsJsonName && isSyncSetting.value) {
         try {
@@ -374,11 +380,11 @@ class RemoteSyncWebDAVController extends BaseController {
               },
             );
           } else {
-            Log.i("缺少$platform对应平台用户设置备份");
+            SimpleLiveLogger().i('缺少$platform对应平台用户设置备份');
           }
-          Log.i('已同步用户设置');
+          SimpleLiveLogger().i('已同步用户设置');
         } catch (e) {
-          Log.e("同步用户设置失败：$e", StackTrace.current);
+          SimpleLiveLogger().e('同步用户设置失败：$e', stackTrace: StackTrace.current);
         }
       } else if (file.name == _userTagsJsonName && isSyncFollows.value) {
         try {
@@ -390,19 +396,22 @@ class RemoteSyncWebDAVController extends BaseController {
             await DBService.instance.tagBox.put(tag.id, tag);
             // 插入之后验证
             var insertedTag = DBService.instance.tagBox.get(tag.id);
-            Log.i('Inserted tag: ${insertedTag?.tag}');
+            SimpleLiveLogger().i('Inserted tag: ${insertedTag?.tag}');
           }
-          Log.i('已同步用户自定义标签');
+          SimpleLiveLogger().i('已同步用户自定义标签');
           // 确保tag同步完成后，更新关注列表
           EventBus.instance.emit(Constant.kUpdateFollow, 0);
         } catch (e) {
-          Log.e('同步用户自定义标签失败:$e', StackTrace.current);
+          SimpleLiveLogger().e(
+            '同步用户自定义标签失败:$e',
+            stackTrace: StackTrace.current,
+          );
         }
       } else {
         return;
       }
     } else {
-      Log.i('不是正确的文件名');
+      SimpleLiveLogger().i('不是正确的文件名');
     }
   }
 

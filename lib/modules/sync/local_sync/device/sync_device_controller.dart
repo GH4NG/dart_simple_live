@@ -42,7 +42,7 @@ class SyncDeviceController extends BaseController {
       SmartDialog.showToast("已同步关注列表和标签");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -58,7 +58,7 @@ class SyncDeviceController extends BaseController {
       SmartDialog.showToast("已同步历史记录");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -74,7 +74,7 @@ class SyncDeviceController extends BaseController {
       SmartDialog.showToast("已同步屏蔽词");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -95,7 +95,7 @@ class SyncDeviceController extends BaseController {
       SmartDialog.showToast("已同步哔哩哔哩账号");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -116,7 +116,7 @@ class SyncDeviceController extends BaseController {
       SmartDialog.showToast("已同步抖音账号");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }

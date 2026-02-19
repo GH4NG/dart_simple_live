@@ -212,7 +212,7 @@ class AppSettingsController extends GetxController {
       false,
     );
     if (logEnable.value) {
-      Log.initWriter();
+      SimpleLiveLogOutput.setLogEnabled(logEnable.value);
     }
 
     playerLogEnable.value = LocalStorageService.instance.getValue(

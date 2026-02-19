@@ -9,19 +9,25 @@ class TestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future<void> function1() async {
-      const msg = '测试功能一';
-      SmartDialog.showToast('测试功能一');
-      Log.d(msg);
+      try {
+        const msg = '测试功能一';
+        SmartDialog.showToast(msg);
+        SimpleLiveLogger().d(msg);
+
+        throw Exception('测试功能一异常');
+      } catch (e, st) {
+        SimpleLiveLogger().e('测试功能一发生异常', error: e, stackTrace: st);
+      }
     }
 
     void function2() {
       SmartDialog.showToast('测试功能二');
-      Log.d('测试功能二');
+      SimpleLiveLogger().d('测试功能二');
     }
 
     void function3() {
       SmartDialog.showToast('测试功能三');
-      Log.d('测试功能三');
+      SimpleLiveLogger().d('测试功能三');
     }
 
     return Scaffold(

@@ -87,7 +87,7 @@ class UrlParse {
         }
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
     return "";
   }
