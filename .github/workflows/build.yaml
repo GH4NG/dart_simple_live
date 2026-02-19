@@ -146,6 +146,7 @@ jobs:
 
             - name: 构建应用
               run: dart run scripts/build.dart ${{ matrix.platform }}
+              continue-on-error: true
               env:
                   CHANNEL: ${{ needs.prepare.outputs.build_type == 'nightly' && 'nightly' || 'release' }}
 

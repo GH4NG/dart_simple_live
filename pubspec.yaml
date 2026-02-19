@@ -74,6 +74,11 @@ dependencies:
     network_info_plus: ^7.0.0
     signalr_netcore: ^1.4.4 # SignalR
 
+    # Firebase
+    firebase_core: ^4.4.0
+    firebase_analytics: ^12.1.2
+    firebase_crashlytics: ^5.0.7
+
     # 视频播放
     media_kit:
         git:

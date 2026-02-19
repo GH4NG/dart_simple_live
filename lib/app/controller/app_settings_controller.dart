@@ -307,6 +307,11 @@ class AppSettingsController extends GetxController {
       true,
     );
 
+    firebaseEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kFirebaseEnable,
+      true,
+    );
+
     initSiteSort();
     initHomeSort();
     initDecoders();
@@ -818,6 +823,15 @@ class AppSettingsController extends GetxController {
     playerForceHttps.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kPlayerForceHttps,
+      e,
+    );
+  }
+
+  var firebaseEnable = true.obs;
+  void setFirebaseEnable(bool e) {
+    firebaseEnable.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kFirebaseEnable,
       e,
     );
   }

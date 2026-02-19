@@ -144,6 +144,9 @@ class LocalStorageService extends GetxService {
   /// 日志记录
   static const String kLogEnable = "LogEnable";
 
+  /// Firebase 数据分析
+  static const String kFirebaseEnable = "FirebaseEnable";
+
   /// 开启播放器日志记录
   static const String kPlayerLogEnable = "PlayerLogEnable";
 

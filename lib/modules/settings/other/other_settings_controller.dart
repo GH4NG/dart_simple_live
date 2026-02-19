@@ -28,6 +28,10 @@ class OtherSettingsController extends BaseController {
     Future.delayed(const Duration(milliseconds: 100), loadLogFiles);
   }
 
+  void setFirebaseEnable(bool e) {
+    AppSettingsController.instance.setFirebaseEnable(e);
+  }
+
   void setPlayerLogEnable(dynamic e) {
     AppSettingsController.instance.setPlayerLogEnable(e);
   }

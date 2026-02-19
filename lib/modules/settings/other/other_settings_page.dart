@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
@@ -69,6 +71,19 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                     onChanged: controller.setLogEnable,
                   ),
                 ),
+                Visibility(
+                  visible:
+                      Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
+                  child: Obx(
+                    () => SettingsSwitch(
+                      value:
+                          AppSettingsController.instance.firebaseEnable.value,
+                      title: "开启 Firebase 分析",
+                      subtitle: "开启后应用崩溃时自动上传脱敏崩溃日志给开发者用于排查问题",
+                      onChanged: controller.setFirebaseEnable,
+                    ),
+                  ),
+                ),
                 Obx(
                   () => SettingsSwitch(
                     value: AppSettingsController.instance.playerLogEnable.value,
@@ -77,6 +92,7 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                     onChanged: controller.setPlayerLogEnable,
                   ),
                 ),
+
                 Obx(
                   () => Visibility(
                     visible:

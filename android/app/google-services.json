@@ -1,0 +1,48 @@
+{
+    "project_info": {
+        "project_number": "653815068558",
+        "project_id": "simplelive-29c42",
+        "storage_bucket": "simplelive-29c42.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:653815068558:android:92bad7329b39290c1cd6df",
+                "android_client_info": {
+                    "package_name": "com.xycz.simple_live"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyDivciPfLhQoZ0jWqHmyoflLfdxMfeHIS0"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        },
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:653815068558:android:98add1f3a7b39c0f1cd6df",
+                "android_client_info": {
+                    "package_name": "com.xycz.simple_live.debug"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyDivciPfLhQoZ0jWqHmyoflLfdxMfeHIS0"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}
