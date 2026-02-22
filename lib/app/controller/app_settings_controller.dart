@@ -212,7 +212,7 @@ class AppSettingsController extends GetxController {
       false,
     );
     if (logEnable.value) {
-      Log.initWriter();
+      SimpleLiveLogOutput.setLogEnabled(logEnable.value);
     }
 
     playerLogEnable.value = LocalStorageService.instance.getValue(
@@ -304,6 +304,11 @@ class AppSettingsController extends GetxController {
 
     followStyleNotGrid.value = LocalStorageService.instance.getValue(
       LocalStorageService.kFollowStyleNotGrid,
+      true,
+    );
+
+    firebaseEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kFirebaseEnable,
       true,
     );
 
@@ -818,6 +823,15 @@ class AppSettingsController extends GetxController {
     playerForceHttps.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kPlayerForceHttps,
+      e,
+    );
+  }
+
+  var firebaseEnable = true.obs;
+  void setFirebaseEnable(bool e) {
+    firebaseEnable.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kFirebaseEnable,
       e,
     );
   }

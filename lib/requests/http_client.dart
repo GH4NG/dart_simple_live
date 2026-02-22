@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:simple_live_app/requests/custom_log_interceptor.dart';
 import 'package:simple_live_app/requests/http_error.dart';
 
 class HttpClient {
@@ -19,7 +18,6 @@ class HttpClient {
         sendTimeout: const Duration(seconds: 20),
       ),
     );
-    dio.interceptors.add(CustomLogInterceptor());
   }
 
   /// Get请求，返回String

@@ -93,9 +93,9 @@ List<T> dynamicFilter<T extends Mappable>(
         try {
           itemMap = item.toMap();
         } catch (e, s) {
-          Log.e(
+          SimpleLiveLogger().e(
             "Filter:Failed to convert item to map for default filtering.",
-            s,
+            stackTrace: s,
           );
           return false;
         }

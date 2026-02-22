@@ -58,7 +58,7 @@ class SignalRService {
       _stateStreamController.add(state);
     });
     hubConnection!.onreconnected(({String? connectionId}) {
-      Log.d("reconnected: $connectionId");
+      SimpleLiveLogger().d("reconnected: $connectionId");
       state = SignalRConnectionState.connected;
       _stateStreamController.add(state);
     });

@@ -136,7 +136,7 @@ class RemoteSyncRoomController extends BaseController {
       SmartDialog.showToast("已同步关注列表");
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -161,7 +161,7 @@ class RemoteSyncRoomController extends BaseController {
       EventBus.instance.emit(Constant.kUpdateHistory, 0);
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -178,7 +178,7 @@ class RemoteSyncRoomController extends BaseController {
       SmartDialog.showToast('已同步屏蔽词');
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -191,7 +191,7 @@ class RemoteSyncRoomController extends BaseController {
       SmartDialog.showToast('已同步哔哩哔哩账号');
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -230,7 +230,7 @@ class RemoteSyncRoomController extends BaseController {
       }
     } catch (e) {
       SmartDialog.showToast("发送失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -259,7 +259,7 @@ class RemoteSyncRoomController extends BaseController {
       }
     } catch (e) {
       SmartDialog.showToast("发送失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -289,7 +289,7 @@ class RemoteSyncRoomController extends BaseController {
       }
     } catch (e) {
       SmartDialog.showToast("发送失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }
@@ -322,7 +322,7 @@ class RemoteSyncRoomController extends BaseController {
       }
     } catch (e) {
       SmartDialog.showToast("同步失败:$e");
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     } finally {
       SmartDialog.dismiss();
     }

@@ -48,7 +48,7 @@ class HistoryService extends GetxService {
     _timer?.cancel();
     _timer = null;
     curLiveRoomHistory = null;
-    Log.i("本次观看时长：$_elapsed");
+    SimpleLiveLogger().i("本次观看时长：$_elapsed");
   }
 
   void _loadHistory(History history) {
@@ -69,7 +69,7 @@ class HistoryService extends GetxService {
     // 累加到当前历史记录
     _elapsed = _stopwatch.elapsed;
     Duration curTime = _oldWatchedDuration + _elapsed;
-    Log.i(
+    SimpleLiveLogger().i(
       "已观看时间：${_oldWatchedDuration.toHMSString()}_增加时间：${_elapsed.toHMSString()}",
     );
     curLiveRoomHistory?.watchDuration = curTime.toHMSString();

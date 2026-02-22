@@ -40,7 +40,7 @@ class SyncService extends GetxService {
 
   @override
   void onInit() {
-    Log.d('SyncService init');
+    SimpleLiveLogger().d('SyncService init');
     deviceId = (const Uuid().v4()).split('-').first;
     listenUDP();
     initServer();
@@ -55,7 +55,9 @@ class SyncService extends GetxService {
 
   void listenUdp(Datagram? datagram) {
     var str = String.fromCharCodes(datagram!.data);
-    Log.i("Received: $str from ${datagram.address}:${datagram.port}");
+    SimpleLiveLogger().i(
+      "Received: $str from ${datagram.address}:${datagram.port}",
+    );
     if (str.startsWith('{') && str.endsWith('}')) {
       var data = json.decode(str);
       //如果是自己的广播，就不处理
@@ -102,7 +104,7 @@ class SyncService extends GetxService {
         port: const Port(udpPort),
       ),
     );
-    Log.i("send udp: hello");
+    SimpleLiveLogger().i("send udp: hello");
   }
 
   /// UDP广播自身信息
@@ -126,7 +128,7 @@ class SyncService extends GetxService {
         port: const Port(udpPort),
       ),
     );
-    Log.i("send udp info: $data");
+    SimpleLiveLogger().i("send udp info: $data");
   }
 
   Future<String> getDeviceName() async {
@@ -163,7 +165,7 @@ class SyncService extends GetxService {
     try {
       ip = await networkInfo.getWifiIP();
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
     try {
       if (ip == null || ip.isEmpty) {
@@ -183,7 +185,7 @@ class SyncService extends GetxService {
         ip = ipList.join(';');
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
     return ip ?? "";
   }
@@ -215,10 +217,10 @@ class SyncService extends GetxService {
       var ip = await getLocalIP();
       ipAddress.value = ip;
 
-      Log.d('Serving at http://$ip:${server.port}');
+      SimpleLiveLogger().d("Serving at http://$ip:${server.port}");
     } catch (e) {
       httpErrorMsg.value = e.toString();
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
   }
 
@@ -253,7 +255,7 @@ class SyncService extends GetxService {
       );
 
       var body = await request.readAsString();
-      Log.d('_syncFollowUserRequest: $body');
+      SimpleLiveLogger().d('_syncFollowUserRequest: $body');
       var jsonBody = json.decode(body);
       if (overlay == 1) {
         await DBService.instance.followBox.clear();
@@ -287,7 +289,7 @@ class SyncService extends GetxService {
       );
 
       var body = await request.readAsString();
-      Log.d('_syncFollowUserTagRequest: $body');
+      SimpleLiveLogger().d('_syncFollowUserTagRequest: $body');
       var jsonBody = json.decode(body);
       if (overlay == 1) {
         await DBService.instance.tagBox.clear();
@@ -318,7 +320,7 @@ class SyncService extends GetxService {
         request.requestedUri.queryParameters['overlay'] ?? '0',
       );
       var body = await request.readAsString();
-      Log.d('_syncFollowUserRequest: $body');
+      SimpleLiveLogger().d('_syncHistoryRequest: $body');
       var jsonBody = json.decode(body);
       if (overlay == 1) {
         await DBService.instance.historyBox.clear();
@@ -356,7 +358,7 @@ class SyncService extends GetxService {
         request.requestedUri.queryParameters['overlay'] ?? '0',
       );
       var body = await request.readAsString();
-      Log.d('_syncBlockedWordRequest: $body');
+      SimpleLiveLogger().d('_syncBlockedWordRequest: $body');
       var jsonBody = json.decode(body);
       if (overlay == 1) {
         AppSettingsController.instance.clearShieldList();
@@ -381,7 +383,7 @@ class SyncService extends GetxService {
   Future<shelf.Response> _syncBiliAccountRequest(shelf.Request request) async {
     try {
       var body = await request.readAsString();
-      Log.d('_syncBiliAccountRequest: $body');
+      SimpleLiveLogger().d('_syncBiliAccountRequest: $body');
       var jsonBody = json.decode(body);
       var cookie = jsonBody['cookie'];
       BiliBiliAccountService.instance.setCookie(cookie);
@@ -405,7 +407,7 @@ class SyncService extends GetxService {
   ) async {
     try {
       var body = await request.readAsString();
-      Log.d('_syncDouyinAccountRequest: $body');
+      SimpleLiveLogger().d('_syncDouyinAccountRequest: $body');
       final jsonBody = json.decode(body);
       final cookie = jsonBody['cookie'];
       DouyinAccountService.instance.setCookie(cookie);
@@ -435,7 +437,7 @@ class SyncService extends GetxService {
 
   @override
   void onClose() {
-    Log.d('SyncService close');
+    SimpleLiveLogger().d('SyncService close');
     udp?.close();
     server?.close(force: true);
     super.onClose();

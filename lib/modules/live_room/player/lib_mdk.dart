@@ -172,7 +172,7 @@ class LibMDK extends BasePlayer {
 
     final id = await player.updateTexture();
     if (id < 0) {
-      Log.w('MDK texture invalid: $id');
+      SimpleLiveLogger().w('MDK texture invalid: $id');
       _textureId.value = null;
       return;
     }
@@ -244,21 +244,21 @@ class LibMDK extends BasePlayer {
 
   Future<void> setupPlayerDebugInfoSubscription() async {
     _player?.onEvent((mdk.MediaEvent event) {
-      // Log.d("MDK: ${event.toString()}");
+      // SimpleLiveLogger().d("MDK: ${event.toString()}");
 
       switch (event.category) {
         case "render.video":
           if (event.detail == "1st_frame") {
-            Log.d("MDK: 首帧已渲染");
+            SimpleLiveLogger().d("MDK: 首帧已渲染");
           }
 
         case "video":
           if (event.detail != "size") break;
-          Log.d("MDK: 视频帧大小变化");
+          SimpleLiveLogger().d("MDK: 视频帧大小变化");
 
           final codec = _player?.mediaInfo.video?.firstOrNull?.codec;
           if (codec == null) {
-            Log.d("MDK: 未获取到视频编码信息");
+            SimpleLiveLogger().d("MDK: 未获取到视频编码信息");
             break;
           }
 
@@ -279,7 +279,7 @@ class LibMDK extends BasePlayer {
             audioParams: audioTrack.toString(),
           );
           _stateController.add(lastState);
-          Log.d(
+          SimpleLiveLogger().d(
             "MDK: 视频尺寸变化: ${videoWidth}x$videoHeight, fps=${codec.frameRate}, isVertical=$isVertical",
           );
           break;

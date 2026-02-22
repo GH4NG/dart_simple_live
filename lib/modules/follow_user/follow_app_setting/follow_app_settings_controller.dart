@@ -39,7 +39,7 @@ class FollowAppSettingsController extends BaseController {
   Future removeTag(FollowUserTag tag) async {
     await FollowService.instance.removeFollowUserTag(tag);
     updateTagList();
-    Log.i('删除tag${tag.tag}');
+    SimpleLiveLogger().i('删除tag${tag.tag}');
   }
 
   Future<void> addTag(String tag) async {

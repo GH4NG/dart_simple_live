@@ -1,0 +1,24 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "simplelive-29c42",
+                    "appId": "1:653815068558:android:92bad7329b39290c1cd6df",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "simplelive-29c42",
+                    "configurations": {
+                        "android": "1:653815068558:android:92bad7329b39290c1cd6df",
+                        "ios": "1:653815068558:ios:c2c3555d6d3e15171cd6df",
+                        "macos": "1:653815068558:ios:e63421fc90b880331cd6df",
+                        "windows": "1:653815068558:web:4430375d4e92110d1cd6df"
+                    }
+                }
+            }
+        }
+    }
+}

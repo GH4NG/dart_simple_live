@@ -1,18 +1,39 @@
 // ignore_for_file: avoid_print
 
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
-Future<void> main() async {
+/// Entry point for the prebuild script
+/// Usage:
+///   dart prebuild.dart linux                # Prepare dependencies for linux
+///   dart prebuild.dart windows              # Prepare dependencies for windows
+///   dart prebuild.dart macos                # Prepare dependencies for macos
+///   dart prebuild.dart android              # Prepare dependencies for android
+///   dart prebuild.dart ios                  # Prepare dependencies for ios
+
+Future<void> main(List<String> args) async {
   try {
-    if (Platform.isLinux) {
-      await _prepareLinux();
-    } else if (Platform.isWindows) {
-      await _prepareWindows();
-    } else if (Platform.isMacOS) {
-      await _prepareMacOS();
-    } else {
-      stderr.writeln('Unsupported platform: ${Platform.operatingSystem}');
-      exit(1);
+    final platform = args.firstWhere(
+      (arg) => !arg.startsWith('-'),
+      orElse: () => '',
+    );
+    switch (platform) {
+      case 'linux':
+        await _prepareLinux();
+        break;
+      case 'windows':
+        await _prepareWindows();
+        break;
+      case 'macos':
+        await _prepareMacOS();
+        break;
+      case 'android':
+        break;
+      case 'ios':
+        break;
+      default:
+        _fail('Unsupported platform: ${Platform.operatingSystem}');
     }
 
     await _run('flutter', ['pub', 'get']);
@@ -27,48 +48,49 @@ Future<void> main() async {
   }
 }
 
-Future<void> _prepareLinux() async {
-  print('==> Preparing dependencies for Linux');
+void _fail(String message) {
+  stderr.writeln(message);
+  exit(1);
+}
 
-  await _run('sudo', ['apt-get', 'update']);
+Future<void> _prepareLinux() async {
+  print('\n==> Preparing dependencies for Linux\n');
 
   await _run('sudo', [
-    'apt-get',
-    'install',
-    '-y',
-    'ninja-build',
-    'libgtk-3-dev',
-    'libmpv-dev',
-    'patchelf',
-    'cmake',
-    'clang',
-    'libfuse2',
-    'pkg-config',
-    'liblzma-dev',
+    'pacman',
+    '-Syu',
+    '--noconfirm',
+  ]);
+
+  await _run('sudo', [
+    'pacman',
+    '-S',
+    '--noconfirm',
+    'gtk3',
+    'libsecret',
+    'gnome-keyring',
+    'wpewebkit',
     'mpv',
-    'libasound2-dev',
-    'locate',
-    'libc++1',
-    'fuse',
-    'lld',
-    'binutils',
+    'dpkg',
+    'pkgconf',
+    'fuse2',
   ]);
 
-  // Install AppImageTool
-  await _run('wget', [
-    '-O',
-    'appimagetool',
-    'https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage',
-  ]);
+  // // Install AppImageTool
+  // await _run('wget', [
+  //   '-O',
+  //   'appimagetool',
+  //   'https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage',
+  // ]);
 
-  await _run('chmod', ['+x', 'appimagetool']);
-  await _run('sudo', ['mv', 'appimagetool', '/usr/local/bin/appimagetool']);
+  // await _run('chmod', ['+x', 'appimagetool']);
+  // await _run('sudo', ['mv', 'appimagetool', '/usr/local/bin/appimagetool']);
 
-  print('Linux dependencies ready.');
+  print('\nLinux dependencies ready.');
 }
 
 Future<void> _prepareWindows() async {
-  print('==> Preparing dependencies for Windows');
+  print('\n==> Preparing dependencies for Windows\n');
 
   const source = r'windows\packaging\exe\ChineseSimplified.isl';
   const target =
@@ -85,42 +107,48 @@ Future<void> _prepareWindows() async {
     ],
   );
 
-  print('Windows dependencies ready.');
+  print('\nWindows dependencies ready.');
 }
 
 Future<void> _prepareMacOS() async {
-  print('==> Preparing dependencies for macOS');
+  print('\n==> Preparing dependencies for macOS\n');
 
   await _run('npm', ['install', '-g', 'appdmg']);
 
-  print('macOS dependencies ready.');
+  print('\nmacOS dependencies ready.');
 }
 
 Future<void> _run(String command, List<String> args) async {
-  print('> $command ${args.join(' ')}');
+  print('--> $command ${args.join(' ')}');
 
-  final result = await Process.run(
+  final process = await Process.start(
     command,
     args,
     runInShell: true,
-    stdoutEncoding: const SystemEncoding(),
-    stderrEncoding: const SystemEncoding(),
   );
 
-  if (result.stdout.toString().isNotEmpty) {
-    stdout.write(result.stdout);
-  }
+  final stdoutFuture = () async {
+    await for (final chunk in process.stdout.transform(utf8.decoder)) {
+      stdout.write(chunk);
+    }
+  }();
 
-  if (result.stderr.toString().isNotEmpty) {
-    stderr.write(result.stderr);
-  }
+  final stderrFuture = () async {
+    await for (final chunk in process.stderr.transform(utf8.decoder)) {
+      stderr.write(chunk);
+    }
+  }();
 
-  if (result.exitCode != 0) {
+  final exitCode = await process.exitCode;
+
+  await Future.wait([stdoutFuture, stderrFuture]);
+
+  if (exitCode != 0) {
     throw ProcessException(
       command,
       args,
-      result.stderr.toString(),
-      result.exitCode,
+      'Command failed with exit code $exitCode\nStdout: ${stdout.toString()}\nStderr: ${stderr.toString()}',
+      exitCode,
     );
   }
 }

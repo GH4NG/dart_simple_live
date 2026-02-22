@@ -215,13 +215,13 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
             pattern = RegExp(removedSlash);
           } catch (e) {
             // should avoid this during add keyword
-            Log.d("关键词：$keyword 正则格式错误");
+            SimpleLiveLogger().w("关键词：$keyword 正则格式错误");
           }
         } else {
           pattern = keyword;
         }
         if (pattern != null && msg.message.contains(pattern)) {
-          Log.d("关键词：$keyword\n已屏蔽消息内容：${msg.message}");
+          SimpleLiveLogger().d("关键词：$keyword\n已屏蔽消息内容：${msg.message}");
           return;
         }
       }
@@ -328,7 +328,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       liveDanmaku.start(detail.value?.danmakuData);
       startLiveDurationTimer(); // 启动开播时长定时器
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       //SmartDialog.showToast(e.toString());
       loadError.value = true;
       error = e as Error;
@@ -367,7 +367,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
       await getPlayUrl();
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("无法读取播放清晰度");
     }
   }
@@ -381,7 +381,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
             AppSettingsController.instance.qualityLevelCellular.value;
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
     }
     return qualityLevel;
   }
@@ -425,7 +425,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
     await player.loadVideo(playurl, headers: playHeaders);
 
-    Log.d("播放链接：$playurl");
+    SimpleLiveLogger().d("播放链接：$playurl");
   }
 
   /// 读取SC
@@ -436,7 +436,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       );
       superChats.addAll(sc);
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       addSysMsg("SC读取失败");
     }
   }
@@ -911,7 +911,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
         return;
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("当前平台不支持直接打开APP");
     }
   }
@@ -956,14 +956,14 @@ ${error?.stackTrace}''');
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.paused) {
-      Log.d("进入后台");
+      SimpleLiveLogger().d("进入后台");
       //进入后台，关闭弹幕
       danmakuController?.pause();
       isBackground = true;
     } else
     //返回前台
     if (state == AppLifecycleState.resumed) {
-      Log.d("返回前台");
+      SimpleLiveLogger().d("返回前台");
       danmakuController?.resume();
       isBackground = false;
     }

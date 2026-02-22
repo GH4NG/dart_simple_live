@@ -391,9 +391,9 @@ class Utils {
     try {
       int currentVer = Utils.parseVersion(packageInfo.version);
       CommonRequest request = CommonRequest();
-      Log.i("检查更新 - 当前版本: $currentVer");
+      SimpleLiveLogger().i("检查更新 - 当前版本: $currentVer");
       var versionInfo = await request.checkUpdate();
-      Log.i("检查更新 - 远程版本: ${versionInfo.versionNum}");
+      SimpleLiveLogger().i("检查更新 - 远程版本: ${versionInfo.versionNum}");
       if (versionInfo.versionNum > currentVer) {
         Get.dialog(
           AlertDialog(
@@ -441,7 +441,7 @@ class Utils {
         }
       }
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       if (showMsg) {
         SmartDialog.showToast("检查更新失败");
       }
@@ -569,7 +569,7 @@ class Utils {
       await Clipboard.setData(ClipboardData(text: text));
       SmartDialog.showToast("已复制到剪贴板");
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("复制到剪贴板失败: $e");
     }
   }
@@ -584,7 +584,7 @@ class Utils {
       }
       return content.text;
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("读取剪切板内容失败：$e");
     }
     return null;

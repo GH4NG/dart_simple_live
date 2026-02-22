@@ -71,6 +71,19 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                     onChanged: controller.setLogEnable,
                   ),
                 ),
+                Visibility(
+                  visible:
+                      Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
+                  child: Obx(
+                    () => SettingsSwitch(
+                      value:
+                          AppSettingsController.instance.firebaseEnable.value,
+                      title: "开启 Firebase 分析",
+                      subtitle: "开启后应用崩溃时自动上传脱敏崩溃日志给开发者用于排查问题",
+                      onChanged: controller.setFirebaseEnable,
+                    ),
+                  ),
+                ),
                 Obx(
                   () => SettingsSwitch(
                     value: AppSettingsController.instance.playerLogEnable.value,
@@ -79,6 +92,7 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                     onChanged: controller.setPlayerLogEnable,
                   ),
                 ),
+
                 Obx(
                   () => Visibility(
                     visible:
@@ -127,18 +141,23 @@ class OtherSettingsPage extends GetView<OtherSettingsController> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (!Platform.isLinux)
-                            IconButton(
-                              onPressed: () {
-                                controller.shareLogFile(item);
-                              },
-                              icon: const Icon(Icons.share),
-                            ),
+                          IconButton(
+                            onPressed: () {
+                              controller.shareLogFile(item);
+                            },
+                            icon: const Icon(RemixIcons.share_line),
+                          ),
                           IconButton(
                             onPressed: () {
                               controller.saveLogFile(item);
                             },
-                            icon: const Icon(Icons.save),
+                            icon: const Icon(RemixIcons.save_3_line),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              controller.deleteLogFile(item);
+                            },
+                            icon: const Icon(RemixIcons.delete_bin_5_line),
                           ),
                         ],
                       ),

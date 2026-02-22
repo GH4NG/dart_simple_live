@@ -25,12 +25,11 @@ class OtherSettingsController extends BaseController {
 
   void setLogEnable(dynamic e) {
     AppSettingsController.instance.setLogEnable(e);
-    if (e) {
-      Log.initWriter();
-      Future.delayed(const Duration(milliseconds: 100), loadLogFiles);
-    } else {
-      Log.disposeWriter();
-    }
+    Future.delayed(const Duration(milliseconds: 100), loadLogFiles);
+  }
+
+  void setFirebaseEnable(bool e) {
+    AppSettingsController.instance.setFirebaseEnable(e);
   }
 
   void setPlayerLogEnable(dynamic e) {
@@ -43,7 +42,7 @@ class OtherSettingsController extends BaseController {
 
   Future<void> loadLogFiles() async {
     var supportDir = await getApplicationSupportDirectory();
-    var logDir = Directory("${supportDir.path}/log");
+    var logDir = Directory("${supportDir.path}/logs");
     if (!logDir.existsSync()) {
       await logDir.create();
     }
@@ -66,7 +65,7 @@ class OtherSettingsController extends BaseController {
     }
 
     var supportDir = await getApplicationSupportDirectory();
-    var logDir = Directory("${supportDir.path}/log");
+    var logDir = Directory("${supportDir.path}/logs");
     if (logDir.existsSync()) {
       await logDir.delete(recursive: true);
     }
@@ -92,6 +91,33 @@ class OtherSettingsController extends BaseController {
       var file = File(item.path);
       await file.copy(filePath);
       SmartDialog.showToast("保存成功");
+    }
+  }
+
+  Future<void> deleteLogFile(LogFileModel item) async {
+    if (AppSettingsController.instance.logEnable.value) {
+      if (logFiles.isNotEmpty && logFiles.first.path == item.path) {
+        SmartDialog.showToast("日志正在写入，无法删除最新日志");
+        return;
+      }
+    }
+
+    final confirm = await Utils.showAlertDialog(
+      "是否删除日志 ${item.name}?",
+      title: "删除日志",
+    );
+    if (!confirm) return;
+
+    try {
+      var file = File(item.path);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+      logFiles.removeWhere((e) => e.path == item.path);
+      SmartDialog.showToast("删除成功");
+    } catch (e) {
+      SimpleLiveLogger().e(e);
+      SmartDialog.showToast("删除失败: $e");
     }
   }
 
@@ -131,7 +157,7 @@ class OtherSettingsController extends BaseController {
 
       SmartDialog.showToast("保存成功");
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("导出失败:$e");
     }
   }
@@ -164,7 +190,7 @@ class OtherSettingsController extends BaseController {
       );
       SmartDialog.showToast("导入成功,重启生效");
     } catch (e) {
-      Log.logPrint(e);
+      SimpleLiveLogger().e(e);
       SmartDialog.showToast("导入失败:$e");
     }
   }
@@ -178,12 +204,4 @@ class OtherSettingsController extends BaseController {
       }
     });
   }
-}
-
-class LogFileModel {
-  late String name;
-  late String path;
-  late DateTime time;
-  late int size;
-  LogFileModel(this.name, this.path, this.time, this.size);
 }
