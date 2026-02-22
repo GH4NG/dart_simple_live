@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'dart:convert';
 import 'dart:io';
 
 class PlatformConfig {
@@ -26,7 +27,7 @@ final platformConfigs = {
   ),
   'linux': PlatformConfig(
     name: 'linux',
-    targets: ['appimage', 'deb', 'zip'],
+    targets: ['deb', 'zip'],
   ),
   'android': PlatformConfig(
     name: 'android',
@@ -45,9 +46,12 @@ const String artifactName =
 
 /// Entry point for the build script
 /// Usage:
+///   dart build.dart linux                # Build all linux targets
 ///   dart build.dart windows              # Build all windows targets
 ///   dart build.dart macos                # Build all macos targets
 ///   dart build.dart android              # Build all android targets
+///   dart build.dart ios                  # Build all ios targets
+
 Future<void> main(List<String> args) async {
   try {
     final platform = args.firstWhere(
@@ -93,30 +97,36 @@ Future<void> _buildPlatform(PlatformConfig config) async {
 }
 
 Future<void> _run(String command, List<String> args) async {
-  print('> $command ${args.join(' ')}');
+  print('--> $command ${args.join(' ')}');
 
-  final result = await Process.run(
+  final process = await Process.start(
     command,
     args,
     runInShell: true,
-    stdoutEncoding: const SystemEncoding(),
-    stderrEncoding: const SystemEncoding(),
   );
 
-  if (result.stdout.toString().isNotEmpty) {
-    stdout.write(result.stdout);
-  }
+  final stdoutFuture = () async {
+    await for (final chunk in process.stdout.transform(utf8.decoder)) {
+      stdout.write(chunk);
+    }
+  }();
 
-  if (result.stderr.toString().isNotEmpty) {
-    stderr.write(result.stderr);
-  }
+  final stderrFuture = () async {
+    await for (final chunk in process.stderr.transform(utf8.decoder)) {
+      stderr.write(chunk);
+    }
+  }();
 
-  if (result.exitCode != 0) {
+  final exitCode = await process.exitCode;
+
+  await Future.wait([stdoutFuture, stderrFuture]);
+
+  if (exitCode != 0) {
     throw ProcessException(
       command,
       args,
-      result.stderr.toString(),
-      result.exitCode,
+      'Command failed with exit code $exitCode\nStdout: ${stdout.toString()}\nStderr: ${stderr.toString()}',
+      exitCode,
     );
   }
 }
