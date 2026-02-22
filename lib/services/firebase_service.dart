@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -11,9 +12,11 @@ class FirebaseService extends GetxService {
 
   @override
   void onInit() {
-    bool e = AppSettingsController.instance.firebaseEnable.value;
-    setFirebase(e);
-    super.onInit();
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+      bool e = AppSettingsController.instance.firebaseEnable.value;
+      setFirebase(e);
+      super.onInit();
+    }
   }
 
   static Future<void> setFirebase(bool enable) async {
