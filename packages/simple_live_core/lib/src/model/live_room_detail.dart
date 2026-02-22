@@ -10,6 +10,9 @@ class LiveRoomDetail {
   /// 封面
   final String cover;
 
+  /// 关键帧
+  final String? keyframe;
+
   /// 分区名称
   final String areaName;
 
@@ -50,6 +53,7 @@ class LiveRoomDetail {
     required this.roomId,
     required this.title,
     required this.cover,
+    this.keyframe,
     required this.areaName,
     required this.userName,
     required this.userAvatar,
@@ -68,6 +72,7 @@ class LiveRoomDetail {
     String? roomId,
     String? title,
     String? cover,
+    String? keyframe,
     String? areaName,
     String? userName,
     String? userAvatar,
@@ -84,6 +89,7 @@ class LiveRoomDetail {
       roomId: roomId ?? this.roomId,
       title: title ?? this.title,
       cover: cover ?? this.cover,
+      keyframe: keyframe ?? this.keyframe,
       areaName: areaName ?? this.areaName,
       userName: userName ?? this.userName,
       userAvatar: userAvatar ?? this.userAvatar,

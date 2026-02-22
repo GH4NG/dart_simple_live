@@ -60,6 +60,9 @@ class FollowUser implements Mappable {
   /// 直播封面
   Rx<String> cover = "".obs;
 
+  /// 直播关键帧
+  Rx<String> keyframe = "".obs;
+
   /// 直播标题
   Rx<String> liveTitle = "".obs;
 

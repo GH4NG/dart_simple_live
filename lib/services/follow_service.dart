@@ -396,6 +396,7 @@ class FollowService extends GetxService {
       );
       item.liveStatus.value = detail.status ? 2 : 1;
       item.cover.value = detail.status ? detail.cover : "";
+      item.keyframe.value = detail.keyframe ?? "";
       item.liveTitle.value = detail.title;
       item.liveAreaName.value = detail.areaName;
       item.online.value = detail.online;

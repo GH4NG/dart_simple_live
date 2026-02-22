@@ -189,6 +189,7 @@ class FollowUserPage extends GetView<FollowUserController> {
                             roomId: item.roomId,
                             title: item.liveTitle.value,
                             cover: item.cover.value,
+                            keyframe: item.keyframe.value,
                             areaName: item.liveAreaName.value,
                             userName: item.userName,
                             online: item.online.value,
