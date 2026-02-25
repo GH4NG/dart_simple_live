@@ -192,6 +192,7 @@ class FollowUserPage extends GetView<FollowUserController> {
                             keyframe: item.keyframe.value,
                             areaName: item.liveAreaName.value,
                             userName: item.userName,
+                            userAvatar: item.face,
                             online: item.online.value,
                           );
                           var site = Sites.allSites[item.siteId]!;

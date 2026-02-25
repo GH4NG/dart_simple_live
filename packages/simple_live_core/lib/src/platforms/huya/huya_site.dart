@@ -137,6 +137,7 @@ class HuyaSite implements LiveSite {
         cover: cover,
         areaName: item["gameFullName"].toString(),
         userName: item["nick"].toString(),
+        userAvatar: item["avatar180"].toString(),
         online: int.tryParse(item["totalCount"].toString()) ?? 0,
       );
       items.add(roomItem);
@@ -307,6 +308,7 @@ class HuyaSite implements LiveSite {
         cover: cover,
         areaName: item["gameFullName"].toString(),
         userName: item["nick"].toString(),
+        userAvatar: item["avatar180"].toString(),
         online: int.tryParse(item["totalCount"].toString()) ?? 0,
       );
       items.add(roomItem);
@@ -475,6 +477,7 @@ class HuyaSite implements LiveSite {
         cover: cover,
         areaName: item["gameName"].toString(),
         userName: item["game_nick"].toString(),
+        userAvatar: item["game_imgUrl"].toString(),
         online: int.tryParse(item["game_total_count"].toString()) ?? 0,
       );
       items.add(roomItem);

@@ -45,6 +45,16 @@ class LiveRoomCard extends StatelessWidget {
                 ),
               ),
               Positioned(
+                top: 10,
+                left: 10,
+                child: Image.asset(
+                  site.logo,
+                  height: 24,
+                  width: 24,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              Positioned(
                 right: 0,
                 left: 0,
                 bottom: 0,
@@ -101,22 +111,38 @@ class LiveRoomCard extends StatelessWidget {
           ),
           Padding(
             padding: AppStyle.edgeInsetsA8.copyWith(bottom: 4),
-            child: Text(
-              item.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Padding(
-            padding: AppStyle.edgeInsetsH8.copyWith(bottom: 8),
-            child: Text(
-              item.userName,
-              maxLines: 1,
-              style: const TextStyle(
-                height: 1.4,
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+            child: Row(
+              children: [
+                NetImage(
+                  item.userAvatar,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                ),
+                AppStyle.hGap8,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      AppStyle.hGap4,
+                      Text(
+                        item.userName,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          height: 1.4,
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

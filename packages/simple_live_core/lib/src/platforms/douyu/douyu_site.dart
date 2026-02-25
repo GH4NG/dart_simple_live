@@ -74,6 +74,7 @@ class DouyuSite implements LiveSite {
         title: item['rn'].toString(),
         areaName: item['c2name_display'].toString(),
         userName: item['nn'].toString(),
+        userAvatar: "https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg",
       );
       items.add(roomItem);
     }
@@ -178,6 +179,7 @@ class DouyuSite implements LiveSite {
         title: item['rn'].toString(),
         areaName: item['c2name_display'].toString(),
         userName: item['nn'].toString(),
+        userAvatar: item['av'].toString(),
       );
       items.add(roomItem);
     }
@@ -261,6 +263,7 @@ class DouyuSite implements LiveSite {
         cover: item["roomSrc"].toString(),
         areaName: item["cateName"].toString(),
         userName: item["nickName"].toString(),
+        userAvatar: item["avatar"].toString(),
         online: parseHotNum(item["hot"].toString()),
       );
       items.add(roomItem);

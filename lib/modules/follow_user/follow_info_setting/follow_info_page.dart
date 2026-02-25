@@ -4,6 +4,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:simple_live_app/app/app_style.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/modules/follow_user/follow_info_setting/follow_info_controller.dart';
+import 'package:simple_live_app/widgets/net_image.dart';
 import 'package:simple_live_app/widgets/settings/settings_menu.dart';
 
 class FollowInfoPage extends GetView<FollowInfoController> {
@@ -46,11 +47,9 @@ class FollowInfoPage extends GetView<FollowInfoController> {
             child: Obx(
               () => Row(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundImage: NetworkImage(
-                      controller.followUser.value!.face,
-                    ),
+                  NetImage(
+                    controller.followUser.value!.face,
+                    borderRadius: 28,
                   ),
                   AppStyle.hGap12,
                   Expanded(

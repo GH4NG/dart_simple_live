@@ -118,6 +118,7 @@ class BiliBiliSite implements LiveSite {
         keyframe: "${item["system_cover"]}@.webp",
         areaName: item["area_name"].toString(),
         userName: item["uname"].toString(),
+        userAvatar: item["face"],
         online: int.tryParse(item["online"].toString()) ?? 0,
       );
       items.add(roomItem);
@@ -234,6 +235,7 @@ class BiliBiliSite implements LiveSite {
         keyframe: "${item["system_cover"]}@.webp",
         areaName: item["area_name"].toString(),
         userName: item["uname"].toString(),
+        userAvatar: item["face"],
         online: int.tryParse(item["online"].toString()) ?? 0,
       );
       items.add(roomItem);
@@ -337,6 +339,7 @@ class BiliBiliSite implements LiveSite {
         keyframe: "https:${item["cover"]}@.webp",
         areaName: areaName,
         userName: item["uname"].toString(),
+        userAvatar: "https:${item["uface"]}",
         online: int.tryParse(item["online"].toString()) ?? 0,
       );
       items.add(roomItem);

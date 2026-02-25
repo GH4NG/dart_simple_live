@@ -19,6 +19,9 @@ class LiveRoomItem {
   /// 用户名
   final String userName;
 
+  /// 用户头像
+  final String userAvatar;
+
   /// 人气/在线人数
   final int online;
   LiveRoomItem({
@@ -28,6 +31,7 @@ class LiveRoomItem {
     this.keyframe,
     required this.areaName,
     required this.userName,
+    required this.userAvatar,
     this.online = 0,
   });
 
@@ -40,6 +44,7 @@ class LiveRoomItem {
       "keyframe": keyframe,
       "areaName": areaName,
       "userName": userName,
+      "userAvatar": userAvatar,
       "online": online,
     });
   }
