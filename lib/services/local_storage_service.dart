@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:simple_live_app/app/log.dart';
 
 class LocalStorageService extends GetxService {

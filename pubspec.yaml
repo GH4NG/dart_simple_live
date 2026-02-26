@@ -21,8 +21,8 @@ dependencies:
     archive: ^4.0.9 # 文件压缩
     get: ^4.7.2 # 状态管理、路由管理、国际化
     dio: ^5.9.1 # 网络请求
-    hive: ^2.2.3 # 持久化存储
-    hive_flutter: ^1.1.0 # 持久化存储
+    hive_ce: ^2.19.3 # 持久化存储
+    hive_ce_flutter: ^2.3.4 # 持久化存储
     logger: ^2.6.2 # 日志
     intl: ^0.20.2 # 国际化
     pinyin: ^3.3.0
