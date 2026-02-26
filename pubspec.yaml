@@ -18,7 +18,7 @@ dependencies:
     flutter_svg: ^2.2.3 # SVG 图标
 
     # 框架、工具
-    archive: ^4.0.7 # 文件压缩
+    archive: ^4.0.9 # 文件压缩
     get: ^4.7.2 # 状态管理、路由管理、国际化
     dio: ^5.9.1 # 网络请求
     hive: ^2.2.3 # 持久化存储
@@ -30,7 +30,7 @@ dependencies:
     dynamic_color: ^1.8.1 # 动态颜色
     path: ^1.9.1
     udp: ^5.0.3 # UDP
-    uuid: ^4.5.1 # UUID
+    uuid: ^4.5.2 # UUID
     synchronized: ^3.4.0 # 线程安全
     collection: ^1.18.0
     pool: ^1.5.2 #并发控制器
@@ -66,8 +66,8 @@ dependencies:
     floating: ^6.0.0 # PIP 画中画
     flutter_inappwebview: ^6.2.0-beta.3
     connectivity_plus: ^7.0.0 # 网络状态
-    mobile_scanner: ^7.1.4 # 二维码扫描
-    volume_controller: ^3.4.0 # 音量控制
+    mobile_scanner: ^7.2.0 # 二维码扫描
+    volume_controller: ^3.4.2 # 音量控制
 
     # 网络相关
     webdav_client: ^1.2.2 # WebDAV
