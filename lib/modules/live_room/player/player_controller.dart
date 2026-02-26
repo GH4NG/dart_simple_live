@@ -14,7 +14,7 @@ import 'package:simple_live_app/modules/live_room/player/base_player.dart';
 import 'package:simple_live_app/modules/live_room/player/lib_mdk.dart';
 import 'package:simple_live_app/modules/live_room/player/lib_mpv.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:screen_brightness/screen_brightness.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/controller/base_controller.dart';
 import 'package:simple_live_app/app/custom_throttle.dart';
@@ -227,7 +227,8 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       // 亮度重置,桌面平台可能会报错,暂时不处理桌面平台的亮度
       try {
-        await ScreenBrightness.instance.resetApplicationScreenBrightness();
+        await ScreenBrightnessPlatform.instance
+            .resetApplicationScreenBrightness();
       } catch (e) {
         SimpleLiveLogger().e(e);
       }
@@ -555,7 +556,7 @@ mixin PlayerGestureControlMixin
       _currentVolume = await VolumeController.instance.getVolume();
     }
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-      _currentBrightness = await ScreenBrightness.instance.application;
+      _currentBrightness = await ScreenBrightnessPlatform.instance.application;
     }
   }
 
@@ -630,7 +631,7 @@ mixin PlayerGestureControlMixin
       if (seek < 0) {
         seek = 0;
       }
-      ScreenBrightness.instance.setApplicationScreenBrightness(seek);
+      ScreenBrightnessPlatform.instance.setApplicationScreenBrightness(seek);
 
       gestureTipText.value = "亮度 ${(seek * 100).toInt()}%";
       SimpleLiveLogger().d(value);
@@ -641,7 +642,7 @@ mixin PlayerGestureControlMixin
         seek = 1;
       }
 
-      ScreenBrightness.instance.setApplicationScreenBrightness(seek);
+      ScreenBrightnessPlatform.instance.setApplicationScreenBrightness(seek);
       gestureTipText.value = "亮度 ${(seek * 100).toInt()}%";
       SimpleLiveLogger().d(value);
     }
