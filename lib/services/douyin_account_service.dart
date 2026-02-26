@@ -28,6 +28,8 @@ class DouyinAccountService extends GetxService {
       LocalStorageService.kDouyinHlsFirst,
       false,
     );
+    (Sites.allSites[Constant.kDouyin]!.liveSite as DouyinSite).hlsFirst =
+        hlsFirst.value;
     logged.value = cookie.isNotEmpty;
     loadUserInfo();
     super.onInit();
@@ -63,8 +65,6 @@ class DouyinAccountService extends GetxService {
 
   void setSite() {
     (Sites.allSites[Constant.kDouyin]!.liveSite as DouyinSite).cookie = cookie;
-    (Sites.allSites[Constant.kDouyin]!.liveSite as DouyinSite).hlsFirst =
-        hlsFirst.value;
   }
 
   void setCookie(String cookie) {
