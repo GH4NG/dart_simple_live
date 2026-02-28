@@ -166,8 +166,8 @@ class FollowUserController extends BasePageController<FollowUser> {
     refreshData();
   }
 
-  void updateFollow(FollowUser follow) {
-    FollowService.instance.addFollow(follow);
+  Future<void> updateFollow(FollowUser follow) async {
+    await FollowService.instance.addFollow(follow);
   }
 
   void setFollowTag(FollowUser follow, FollowUserTag targetTag) {

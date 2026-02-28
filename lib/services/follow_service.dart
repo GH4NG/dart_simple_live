@@ -77,7 +77,10 @@ class FollowService extends GetxService {
     super.onInit();
   }
 
-  void updateTagName(FollowUserTag followUserTag, String newTagName) {
+  Future<void> updateTagName(
+    FollowUserTag followUserTag,
+    String newTagName,
+  ) async {
     final FollowUserTag newTag = followUserTag.copyWith(tag: newTagName);
     updateFollowUserTag(newTag);
     // update item's tag when update tagName
@@ -85,7 +88,7 @@ class FollowService extends GetxService {
       var follow = DBService.instance.followBox.get(i);
       if (follow != null) {
         follow.tag = newTagName;
-        addFollow(follow);
+        await addFollow(follow);
       }
     }
   }
@@ -116,7 +119,7 @@ class FollowService extends GetxService {
       var follow = DBService.instance.followBox.get(i);
       if (follow != null) {
         follow.tag = "全部";
-        FollowService.instance.addFollow(follow);
+        await FollowService.instance.addFollow(follow);
       }
     }
     followTagList.remove(tag);
@@ -138,7 +141,7 @@ class FollowService extends GetxService {
   }
 
   /// 为关注项设置标签（统一逻辑）
-  void setFollowTag(FollowUser item, FollowUserTag targetTag) {
+  Future<void> setFollowTag(FollowUser item, FollowUserTag targetTag) async {
     // 当前标签对象（可能为“全部”且不在 followTagList 中）
     FollowUserTag? currentTag;
     if (item.tag != '全部') {
@@ -174,7 +177,7 @@ class FollowService extends GetxService {
 
     // 更新FollowUser本身
     item.tag = targetTag.tag;
-    addFollow(item);
+    await addFollow(item);
   }
 
   void filterDataByTag(FollowUserTag tag) {
@@ -208,7 +211,7 @@ class FollowService extends GetxService {
   }
 
   // 添加关注
-  void addFollow(FollowUser follow) {
+  Future<void> addFollow(FollowUser follow) async {
     // follow变动过程中romanName统一变化
     String romanName = "";
     if (follow.remark != null && follow.remark!.isNotEmpty) {
@@ -218,11 +221,15 @@ class FollowService extends GetxService {
     }
     follow.romanName = romanName.normalize();
 
-    DBService.instance.addFollow(follow);
+    await DBService.instance.addFollow(follow);
   }
 
   // 取消关注
   Future<void> removeFollowUser(String id) async {
+    // 存储在线状态，数据修改应followList外表和followBox内表保持同步
+    // 后续业务逻辑中，将规避直接业务在数据库上操作，落库操作只执行一次
+    // 从而规避业务逻辑直读数据库导致的数据混乱
+    followList.removeWhere((x) => x.id == id);
     await DBService.instance.deleteFollow(id);
   }
 
@@ -232,7 +239,7 @@ class FollowService extends GetxService {
   }
 
   // 更新关注的历史记录
-  void updateFollowHistory(History history) {
+  Future<void> updateFollowHistory(History history) async {
     var follow = followList
         .where((follow) => follow.id == history.id)
         .firstOrNull;
@@ -240,7 +247,7 @@ class FollowService extends GetxService {
       return;
     } else {
       follow.watchDuration = history.watchDuration;
-      addFollow(follow);
+      await addFollow(follow);
     }
     SimpleLiveLogger().i("已更新当前播放的观看时长：${follow.watchDuration}");
   }

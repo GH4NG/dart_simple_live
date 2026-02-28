@@ -80,11 +80,11 @@ class FollowInfoController extends BasePageController<FollowUser> {
     followUser.refresh();
   }
 
-  void updateRemark(String newRemark) {
+  Future<void> updateRemark(String newRemark) async {
     final current = followUser.value;
     if (current == null) return;
     current.remark = newRemark;
-    FollowService.instance.addFollow(current);
+    await FollowService.instance.addFollow(current);
     followUser.refresh();
   }
 
@@ -201,7 +201,7 @@ class FollowInfoController extends BasePageController<FollowUser> {
 
     // 替换关注
     await FollowService.instance.removeFollowUser(current.id);
-    FollowService.instance.addFollow(newFollow);
+    await FollowService.instance.addFollow(newFollow);
 
     // 更新关注同时 更新历史记录数据
     History? oldHistroy = DBService.instance.getHistory(current.id);
@@ -217,7 +217,7 @@ class FollowInfoController extends BasePageController<FollowUser> {
         updateTime: oldHistroy.updateTime,
       );
       await DBService.instance.delHistory(oldHistroy.id);
-      DBService.instance.addOrUpdateHistory(newHistory);
+      await DBService.instance.addOrUpdateHistory(newHistory);
     }
 
     // 刷新本地数据并更新UI
