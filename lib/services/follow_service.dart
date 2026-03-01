@@ -220,7 +220,14 @@ class FollowService extends GetxService {
       romanName = PinyinHelper.getShortPinyin(follow.userName);
     }
     follow.romanName = romanName.normalize();
-
+    // db.add 其实是update会直接更新数据，所以外表也应该实现此功能：有则更，无则添加
+    int index = followList.indexWhere((f) => f.id == follow.id);
+    if (index != -1) {
+      followList[index] = follow;
+    } else {
+      followList.add(follow);
+    }
+    liveListSort(); // 每次数据操作后外表进行业务刷新
     await DBService.instance.addFollow(follow);
   }
 
@@ -229,7 +236,18 @@ class FollowService extends GetxService {
     // 存储在线状态，数据修改应followList外表和followBox内表保持同步
     // 后续业务逻辑中，将规避直接业务在数据库上操作，落库操作只执行一次
     // 从而规避业务逻辑直读数据库导致的数据混乱
+    FollowUser follow = followList.firstWhere((x) => x.id == id);
     followList.removeWhere((x) => x.id == id);
+    // 取消关注同时删除用户自定义tag中的关注id
+    if (follow.tag != "全部") {
+      // 对象引用会直接修改数据无需额外操作
+      var tag = followTagList.firstWhereOrNull((tag) => tag.tag == follow.tag);
+      if (tag != null) {
+        tag.userId.remove(follow.id);
+        await FollowService.instance.updateFollowUserTag(tag);
+      }
+    }
+    liveListSort();
     await DBService.instance.deleteFollow(id);
   }
 
@@ -422,8 +440,6 @@ class FollowService extends GetxService {
 
   void filterData() {
     liveListSort();
-    liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
-    notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
     _updatedListController.add(0);
   }
 

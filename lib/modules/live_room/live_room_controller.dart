@@ -472,6 +472,9 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       return;
     }
     var id = "${site.id}_$roomId";
+    var historyDuration = HistoryService.instance.getHistoryDuration(
+      followUserId: id,
+    );
     await FollowService.instance.addFollow(
       FollowUser(
         id: id,
@@ -480,7 +483,8 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
         userName: detail.value?.userName ?? "",
         face: detail.value?.userAvatar ?? "",
         addTime: DateTime.now(),
-      ),
+        watchDuration: historyDuration,
+      )..liveStatus.value = liveStatus.value ? 2 : 1,
     );
     followed.value = true;
     EventBus.instance.emit(Constant.kUpdateFollow, id);

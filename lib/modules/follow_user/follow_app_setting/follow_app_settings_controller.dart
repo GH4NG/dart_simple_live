@@ -34,6 +34,8 @@ class FollowAppSettingsController extends BaseController {
   // 标签管理
   void updateTagList() {
     userTagList.assignAll(FollowService.instance.followTagList);
+    // 修改tag 通知 follo_user_controller 数据更新
+    EventBus.instance.emit(Constant.kUpdateFollow, 0);
   }
 
   Future removeTag(FollowUserTag tag) async {
