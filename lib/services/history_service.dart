@@ -85,4 +85,21 @@ class HistoryService extends GetxService {
     historyWatchDuration = history?.watchDuration ?? "00:00:00";
     return historyWatchDuration;
   }
+
+  // history crud
+  Future<void> addOrUpdateHistory(History history) async {
+    await DBService.instance.addOrUpdateHistory(history);
+  }
+
+  Future<void> delHistory(String id) async {
+    await DBService.instance.delHistory(id);
+  }
+
+  List<History> getHistories() {
+    return DBService.instance.getHistories();
+  }
+
+  Future<void> historyClear() async {
+    await DBService.instance.historyBox.clear();
+  }
 }

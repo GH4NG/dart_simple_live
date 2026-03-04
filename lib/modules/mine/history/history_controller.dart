@@ -1,7 +1,7 @@
 import 'package:simple_live_app/app/controller/base_controller.dart';
 import 'package:simple_live_app/app/utils.dart';
 import 'package:simple_live_app/models/db/history.dart';
-import 'package:simple_live_app/services/db_service.dart';
+import 'package:simple_live_app/services/history_service.dart';
 
 class HistoryController extends BasePageController<History> {
   @override
@@ -9,7 +9,7 @@ class HistoryController extends BasePageController<History> {
     if (page > 1) {
       return Future.value([]);
     }
-    return Future.value(DBService.instance.getHistories());
+    return Future.value(HistoryService.instance.getHistories());
   }
 
   Future<void> clean() async {
@@ -17,12 +17,12 @@ class HistoryController extends BasePageController<History> {
     if (!result) {
       return;
     }
-    await DBService.instance.historyBox.clear();
+    await HistoryService.instance.historyClear();
     refreshData();
   }
 
   Future<void> removeItem(History item) async {
-    await DBService.instance.historyBox.delete(item.id);
+    await HistoryService.instance.delHistory(item.id);
     refreshData();
   }
 }
