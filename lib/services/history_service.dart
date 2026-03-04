@@ -87,6 +87,10 @@ class HistoryService extends GetxService {
   }
 
   // history crud
+  History? getHistory(String id) {
+    return DBService.instance.getHistory(id);
+  }
+
   Future<void> addOrUpdateHistory(History history) async {
     await DBService.instance.addOrUpdateHistory(history);
   }
