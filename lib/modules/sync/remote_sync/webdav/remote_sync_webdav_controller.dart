@@ -268,7 +268,10 @@ class RemoteSyncWebDAVController extends BaseController {
       await userTagsJsonFile.writeAsString(jsonEncode(dataTagsMap));
       // 全量备份用户设置，为修改包名无痛迁移数据做准备
       // v1.8.3 修改为按平台备份/恢复用户设置
-      var settingList = LocalStorageService.instance.settingsBox.toMap();
+      var settingList = LocalStorageService.instance.settingsBox.toMap()
+        ..remove(LocalStorageService.kHiveDbVer)
+        // 不同步webdav的密码,防止旧密码覆盖新密码
+        ..remove(LocalStorageService.kWebDAVPassword);
       var dataSettingListMap = {
         "data": {
           Platform.operatingSystem: settingList,
