@@ -100,6 +100,8 @@ class FollowUserController extends BasePageController<FollowUser> {
   }
 
   void filterData() {
+    bool hideOffline = AppSettingsController.instance.hideOfflineFollow.value;
+
     if (filterMode.value.tag == "全部") {
       list.assignAll(FollowService.instance.followList.value);
     } else if (filterMode.value.tag == "直播中") {
@@ -109,6 +111,10 @@ class FollowUserController extends BasePageController<FollowUser> {
     } else {
       FollowService.instance.filterDataByTag(filterMode.value);
       list.assignAll(FollowService.instance.curTagFollowList);
+    }
+
+    if (hideOffline && filterMode.value.tag != "未开播") {
+      list.retainWhere((user) => user.liveStatus.value == 2);
     }
   }
 

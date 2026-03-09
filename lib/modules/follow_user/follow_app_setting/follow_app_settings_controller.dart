@@ -32,6 +32,12 @@ class FollowAppSettingsController extends BaseController {
     super.onInit();
   }
 
+  // 修改用户自定义关注设置
+  void setFollowSetting(bool hideOfflineFollow) {
+    appC.setHideOfflineFollow(hideOfflineFollow);
+    EventBus.instance.emit(Constant.kUpdateFollow, 0);
+  }
+
   // 标签管理
   void updateTagList() {
     userTagList.assignAll(FollowService.instance.followTagList);

@@ -80,6 +80,29 @@ class FollowSettingsPage extends GetView<FollowAppSettingsController> {
               Padding(
                 padding: AppStyle.edgeInsetsA12.copyWith(top: 24),
                 child: Text(
+                  "其他设置",
+                  style: Get.textTheme.titleSmall,
+                ),
+              ),
+              SettingsCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Obx(
+                      () => SettingsSwitch(
+                        value: controller.appC.hideOfflineFollow.value,
+                        title: "隐藏离线关注",
+                        onChanged: (e) {
+                          controller.setFollowSetting(e);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: AppStyle.edgeInsetsA12.copyWith(top: 24),
+                child: Text(
                   "自动更新设置",
                   style: Get.textTheme.titleSmall,
                 ),

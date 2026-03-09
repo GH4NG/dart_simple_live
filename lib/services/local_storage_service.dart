@@ -222,6 +222,9 @@ class LocalStorageService extends GetxService {
   /// 数据库版本
   static const String kHiveDbVer = "kHiveDbVer";
 
+  /// 隐藏不在线关注
+  static const String kHideOfflineFollow = "HideOfflineFollow";
+
   late Box settingsBox;
   late Box<String> shieldBox;
 

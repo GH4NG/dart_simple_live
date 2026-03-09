@@ -307,6 +307,11 @@ class AppSettingsController extends GetxController {
       true,
     );
 
+    hideOfflineFollow.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kHideOfflineFollow,
+      false,
+    );
+
     firebaseEnable.value = LocalStorageService.instance.getValue(
       LocalStorageService.kFirebaseEnable,
       true,
@@ -995,6 +1000,16 @@ class AppSettingsController extends GetxController {
     followStyleNotGrid.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kFollowStyleNotGrid,
+      e,
+    );
+  }
+
+  // 隐藏不在线的关注
+  var hideOfflineFollow = false.obs;
+  void setHideOfflineFollow(bool e) {
+    hideOfflineFollow.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kHideOfflineFollow,
       e,
     );
   }
