@@ -83,7 +83,7 @@ class AppSettingsController extends GetxController {
     );
     danmuFontWeight.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuFontWeight,
-      FontWeight.normal.index,
+      FontWeight.normal.value,
     );
 
     hardwareDecode.value = LocalStorageService.instance.getValue(
