@@ -29,7 +29,7 @@ class HuyaSite implements LiveSite {
   static const String AYYUID_REGEX = r'"yyid":"?(\d+)"?';
 
   static const String HYSDK_UA =
-      "HYSDK(Windows,30000002)_APP(pc_exe&7070000&official)_SDK(trans&2.33.0.5678)";
+      "HYSDK(Windows,30000002)_APP(pc_exe&7080000&official)_SDK(trans&2.34.0.5795)";
 
   static Map<String, String> get requestHeaders {
     return {
