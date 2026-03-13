@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:simple_live_app/firebase_options.dart';
 import 'package:simple_live_app/services/firebase_service.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -50,9 +48,6 @@ void main() async {
   //初始化服务
   await initServices();
   await initWindow();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   MigrationService.migrateDataByVersion();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
