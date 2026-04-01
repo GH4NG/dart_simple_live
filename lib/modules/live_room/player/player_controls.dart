@@ -14,7 +14,6 @@ import 'package:simple_live_app/modules/settings/danmu_settings_page.dart';
 import 'package:simple_live_app/services/follow_service.dart';
 import 'package:simple_live_app/widgets/desktop_refresh_button.dart';
 import 'package:simple_live_app/widgets/follow_user_item.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:simple_live_app/widgets/superchat_card.dart';
 import 'dart:async';
 import 'package:simple_live_core/simple_live_core.dart';
@@ -64,342 +63,340 @@ Widget playerControls(BuildContext context, LiveRoomController controller) {
 Widget buildFullControls(BuildContext context, LiveRoomController controller) {
   var padding = MediaQuery.of(context).padding;
   GlobalKey volumeButtonKey = GlobalKey();
-  return DragToMoveArea(
-    child: Stack(
-      children: [
-        Container(),
+  return Stack(
+    children: [
+      Container(),
 
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: controller.onTap,
-            onDoubleTapDown: controller.onDoubleTap,
-            onLongPress: () {
-              if (controller.lockControlsState.value) {
-                return;
-              }
-              showFollowUser(controller);
+      Positioned.fill(
+        child: GestureDetector(
+          onTap: controller.onTap,
+          onDoubleTapDown: controller.onDoubleTap,
+          onLongPress: () {
+            if (controller.lockControlsState.value) {
+              return;
+            }
+            showFollowUser(controller);
+          },
+          onVerticalDragStart: controller.onVerticalDragStart,
+          onVerticalDragUpdate: controller.onVerticalDragUpdate,
+          onVerticalDragEnd: controller.onVerticalDragEnd,
+          child: MouseRegion(
+            onHover: (PointerHoverEvent event) {
+              controller.onHover(event, context);
             },
-            onVerticalDragStart: controller.onVerticalDragStart,
-            onVerticalDragUpdate: controller.onVerticalDragUpdate,
-            onVerticalDragEnd: controller.onVerticalDragEnd,
-            child: MouseRegion(
-              onHover: (PointerHoverEvent event) {
-                controller.onHover(event, context);
-              },
-              cursor: controller.showCursorState.value
-                  ? SystemMouseCursors.basic
-                  : SystemMouseCursors.none,
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: Colors.transparent,
-                // child: Visibility(
-                //   //拖拽区域
-                //   visible: controller.smallWindowState.value,
-                //   child: DragToMoveArea(
-                //       child: Container(
-                //     width: double.infinity,
-                //     height: double.infinity,
-                //     color: Colors.transparent,
-                //   )),
-                // ),
-              ),
+            cursor: controller.showCursorState.value
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.none,
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.transparent,
+              // child: Visibility(
+              //   //拖拽区域
+              //   visible: controller.smallWindowState.value,
+              //   child: DragToMoveArea(
+              //       child: Container(
+              //     width: double.infinity,
+              //     height: double.infinity,
+              //     color: Colors.transparent,
+              //   )),
+              // ),
             ),
           ),
         ),
+      ),
 
-        // 顶部
-        Obx(
-          () => AnimatedPositioned(
-            left: 0,
-            right: 0,
-            top:
-                (controller.showControlsState.value &&
-                    !controller.lockControlsState.value)
-                ? 0
-                : -(48 + padding.top),
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              height: 48 + padding.top,
-              padding: EdgeInsets.only(
-                left: padding.left + 12,
-                right: padding.right + 12,
-                top: padding.top,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.transparent, Colors.black87],
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      if (controller.smallWindowState.value) {
-                        controller.exitSmallWindow();
-                      } else {
-                        controller.exitFull();
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  AppStyle.hGap12,
-                  Expanded(
-                    child: Text(
-                      "${controller.detail.value?.title} - ${controller.detail.value?.userName}",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                  AppStyle.hGap12,
-                  IconButton(
-                    onPressed: () {
-                      controller.saveScreenshot();
-                    },
-                    icon: const Icon(
-                      Icons.camera_alt_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      showFollowUser(controller);
-                    },
-                    icon: const Icon(
-                      Remix.play_list_2_line,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  Visibility(
-                    visible: Platform.isAndroid,
-                    child: IconButton(
-                      onPressed: () {
-                        controller.enablePIP();
-                      },
-                      icon: SvgPicture.asset(
-                        'assets/icons/icon_scalewindow.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      showPlayerSettings(controller);
-                    },
-                    icon: const Icon(
-                      Icons.more_horiz,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ],
+      // 顶部
+      Obx(
+        () => AnimatedPositioned(
+          left: 0,
+          right: 0,
+          top:
+              (controller.showControlsState.value &&
+                  !controller.lockControlsState.value)
+              ? 0
+              : -(48 + padding.top),
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            height: 48 + padding.top,
+            padding: EdgeInsets.only(
+              left: padding.left + 12,
+              right: padding.right + 12,
+              top: padding.top,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.transparent, Colors.black87],
               ),
             ),
-          ),
-        ),
-        // 底部
-        Obx(
-          () => AnimatedPositioned(
-            left: 0,
-            right: 0,
-            bottom:
-                (controller.showControlsState.value &&
-                    !controller.lockControlsState.value)
-                ? 0
-                : -(80 + padding.bottom),
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black87],
-                ),
-              ),
-              padding: EdgeInsets.only(
-                left: padding.left + 12,
-                right: padding.right + 12,
-                bottom: padding.bottom,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      controller.refreshRoom();
-                    },
-                    icon: SvgPicture.asset(
-                      'assets/icons/icon_refresh.svg',
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
-                  Offstage(
-                    offstage: controller.showDanmakuState.value,
-                    child: IconButton(
-                      onPressed: () => controller.showDanmakuState.value =
-                          !controller.showDanmakuState.value,
-                      icon: SvgPicture.asset(
-                        'assets/icons/icon_danmaku_close.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
-                  ),
-                  Offstage(
-                    offstage: !controller.showDanmakuState.value,
-                    child: IconButton(
-                      onPressed: () => controller.showDanmakuState.value =
-                          !controller.showDanmakuState.value,
-                      icon: SvgPicture.asset(
-                        'assets/icons/icon_danmaku_open.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
-                  ),
-                  Visibility(
-                    visible: controller.showDanmakuState.value,
-                    child: IconButton(
-                      onPressed: () {
-                        controller.showDanmuSettingsSheet();
-                      },
-                      icon: SvgPicture.asset(
-                        'assets/icons/icon_danmaku_setting.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
-                  ),
-                  Obx(() {
-                    final showTime = controller.detail.value?.showTime;
-                    if (showTime == null || showTime.isEmpty) {
-                      return const SizedBox.shrink();
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    if (controller.smallWindowState.value) {
+                      controller.exitSmallWindow();
+                    } else {
+                      controller.exitFull();
                     }
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        controller.liveDuration.value,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    );
-                  }),
-                  const Expanded(child: Center()),
-                  Visibility(
-                    visible: !Platform.isAndroid && !Platform.isIOS,
-                    child: IconButton(
-                      key: volumeButtonKey,
-                      onPressed: () {
-                        controller.showVolumeSlider(
-                          volumeButtonKey.currentContext!,
-                        );
-                      },
-                      icon: SvgPicture.asset(
-                        'assets/icons/icon_volume.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
+                  },
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                  TextButton(
-                    onPressed: () {
-                      showQualitiesInfo(controller);
-                    },
-                    child: Obx(
-                      () => Text(
-                        controller.currentQualityInfo.value,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
+                ),
+                AppStyle.hGap12,
+                Expanded(
+                  child: Text(
+                    "${controller.detail.value?.title} - ${controller.detail.value?.userName}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      showLinesInfo(controller);
-                    },
-                    child: Text(
-                      controller.currentLineInfo.value,
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
-                    ),
+                ),
+                AppStyle.hGap12,
+                IconButton(
+                  onPressed: () {
+                    controller.saveScreenshot();
+                  },
+                  icon: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                  IconButton(
+                ),
+                IconButton(
+                  onPressed: () {
+                    showFollowUser(controller);
+                  },
+                  icon: const Icon(
+                    Remix.play_list_2_line,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                Visibility(
+                  visible: Platform.isAndroid,
+                  child: IconButton(
                     onPressed: () {
-                      if (controller.smallWindowState.value) {
-                        controller.exitSmallWindow();
-                      } else {
-                        controller.exitFull();
-                      }
+                      controller.enablePIP();
                     },
                     icon: SvgPicture.asset(
-                      'assets/icons/icon_fullscreen.svg',
+                      'assets/icons/icon_scalewindow.svg',
                       width: 24,
                       height: 24,
                     ),
                   ),
-                ],
-              ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    showPlayerSettings(controller);
+                  },
+                  icon: const Icon(
+                    Icons.more_horiz,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+      ),
+      // 底部
+      Obx(
+        () => AnimatedPositioned(
+          left: 0,
+          right: 0,
+          bottom:
+              (controller.showControlsState.value &&
+                  !controller.lockControlsState.value)
+              ? 0
+              : -(80 + padding.bottom),
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black87],
+              ),
+            ),
+            padding: EdgeInsets.only(
+              left: padding.left + 12,
+              right: padding.right + 12,
+              bottom: padding.bottom,
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    controller.refreshRoom();
+                  },
+                  icon: SvgPicture.asset(
+                    'assets/icons/icon_refresh.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+                Offstage(
+                  offstage: controller.showDanmakuState.value,
+                  child: IconButton(
+                    onPressed: () => controller.showDanmakuState.value =
+                        !controller.showDanmakuState.value,
+                    icon: SvgPicture.asset(
+                      'assets/icons/icon_danmaku_close.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+                Offstage(
+                  offstage: !controller.showDanmakuState.value,
+                  child: IconButton(
+                    onPressed: () => controller.showDanmakuState.value =
+                        !controller.showDanmakuState.value,
+                    icon: SvgPicture.asset(
+                      'assets/icons/icon_danmaku_open.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+                Visibility(
+                  visible: controller.showDanmakuState.value,
+                  child: IconButton(
+                    onPressed: () {
+                      controller.showDanmuSettingsSheet();
+                    },
+                    icon: SvgPicture.asset(
+                      'assets/icons/icon_danmaku_setting.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+                Obx(() {
+                  final showTime = controller.detail.value?.showTime;
+                  if (showTime == null || showTime.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      controller.liveDuration.value,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                }),
+                const Expanded(child: Center()),
+                Visibility(
+                  visible: !Platform.isAndroid && !Platform.isIOS,
+                  child: IconButton(
+                    key: volumeButtonKey,
+                    onPressed: () {
+                      controller.showVolumeSlider(
+                        volumeButtonKey.currentContext!,
+                      );
+                    },
+                    icon: SvgPicture.asset(
+                      'assets/icons/icon_volume.svg',
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    showQualitiesInfo(controller);
+                  },
+                  child: Obx(
+                    () => Text(
+                      controller.currentQualityInfo.value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    showLinesInfo(controller);
+                  },
+                  child: Text(
+                    controller.currentLineInfo.value,
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    if (controller.smallWindowState.value) {
+                      controller.exitSmallWindow();
+                    } else {
+                      controller.exitFull();
+                    }
+                  },
+                  icon: SvgPicture.asset(
+                    'assets/icons/icon_fullscreen.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
 
-        // 右侧锁定
-        Obx(
-          () => AnimatedPositioned(
-            top: 0,
-            bottom: 0,
-            right: controller.showControlsState.value
-                ? padding.right + 12
-                : -(64 + padding.right),
-            duration: const Duration(milliseconds: 200),
-            child: buildLockButton(controller),
-          ),
+      // 右侧锁定
+      Obx(
+        () => AnimatedPositioned(
+          top: 0,
+          bottom: 0,
+          right: controller.showControlsState.value
+              ? padding.right + 12
+              : -(64 + padding.right),
+          duration: const Duration(milliseconds: 200),
+          child: buildLockButton(controller),
         ),
-        // 左侧锁定
-        Obx(
-          () => AnimatedPositioned(
-            top: 0,
-            bottom: 0,
-            left: controller.showControlsState.value
-                ? padding.left + 12
-                : -(64 + padding.right),
-            duration: const Duration(milliseconds: 200),
-            child: buildLockButton(controller),
-          ),
+      ),
+      // 左侧锁定
+      Obx(
+        () => AnimatedPositioned(
+          top: 0,
+          bottom: 0,
+          left: controller.showControlsState.value
+              ? padding.left + 12
+              : -(64 + padding.right),
+          duration: const Duration(milliseconds: 200),
+          child: buildLockButton(controller),
         ),
-        Obx(
-          () => Offstage(
-            offstage: !controller.showGestureTip.value,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade900,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  controller.gestureTipText.value,
-                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                ),
+      ),
+      Obx(
+        () => Offstage(
+          offstage: !controller.showGestureTip.value,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade900,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                controller.gestureTipText.value,
+                style: const TextStyle(fontSize: 18, color: Colors.white),
               ),
             ),
           ),
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
