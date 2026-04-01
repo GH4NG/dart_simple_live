@@ -60,28 +60,44 @@ class LiveMessageColor {
   LiveMessageColor(this.r, this.g, this.b);
   static LiveMessageColor get white => LiveMessageColor(255, 255, 255);
   static LiveMessageColor numberToColor(int intColor) {
-    var obj = intColor.toRadixString(16);
+    try {
+      if (intColor < 0 || intColor > 0xFFFFFFFF) {
+        return LiveMessageColor.white;
+      }
 
-    LiveMessageColor color = LiveMessageColor.white;
-    if (obj.length == 4) {
-      obj = "00$obj";
-    }
-    if (obj.length == 6) {
-      var R = int.parse(obj.substring(0, 2), radix: 16);
-      var G = int.parse(obj.substring(2, 4), radix: 16);
-      var B = int.parse(obj.substring(4, 6), radix: 16);
+      var obj = intColor.toRadixString(16).toLowerCase();
 
-      color = LiveMessageColor(R, G, B);
-    }
-    if (obj.length == 8) {
-      var R = int.parse(obj.substring(2, 4), radix: 16);
-      var G = int.parse(obj.substring(4, 6), radix: 16);
-      var B = int.parse(obj.substring(6, 8), radix: 16);
-      //var A = int.parse(obj.substring(0, 2), radix: 16);
-      color = LiveMessageColor(R, G, B);
-    }
+      LiveMessageColor color = LiveMessageColor.white;
+      if (obj.length == 4) {
+        obj = "00$obj";
+      }
+      if (obj.length == 6) {
+        var R = int.parse(obj.substring(0, 2), radix: 16).clamp(0, 255);
+        var G = int.parse(obj.substring(2, 4), radix: 16).clamp(0, 255);
+        var B = int.parse(obj.substring(4, 6), radix: 16).clamp(0, 255);
 
-    return color;
+        color = LiveMessageColor(R, G, B);
+      } else if (obj.length == 8) {
+        var R = int.parse(obj.substring(2, 4), radix: 16).clamp(0, 255);
+        var G = int.parse(obj.substring(4, 6), radix: 16).clamp(0, 255);
+        var B = int.parse(obj.substring(6, 8), radix: 16).clamp(0, 255);
+
+        color = LiveMessageColor(R, G, B);
+      } else if (obj.length > 8) {
+        obj = obj.substring(obj.length - 6);
+        var R = int.parse(obj.substring(0, 2), radix: 16).clamp(0, 255);
+        var G = int.parse(obj.substring(2, 4), radix: 16).clamp(0, 255);
+        var B = int.parse(obj.substring(4, 6), radix: 16).clamp(0, 255);
+
+        color = LiveMessageColor(R, G, B);
+      } else {
+        return LiveMessageColor.white;
+      }
+
+      return color;
+    } catch (e) {
+      return LiveMessageColor.white;
+    }
   }
 
   @override
