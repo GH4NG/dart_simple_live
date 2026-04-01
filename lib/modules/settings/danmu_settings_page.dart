@@ -105,7 +105,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
               Obx(
                 () => SettingsNumber(
                   title: "字体粗细",
-                  value: controller.danmuFontWeight.value,
+                  value: controller.danmuFontWeight.value.clamp(0, 8),
                   min: 0,
                   max: 8,
                   step: 1,
@@ -119,7 +119,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                     "很粗",
                     "极粗",
                     "超极粗",
-                  ][controller.danmuFontWeight.value].toString(),
+                  ][controller.danmuFontWeight.value.clamp(0, 8)].toString(),
                   onChanged: (e) {
                     controller.setDanmuFontWeight(e);
                     updateDanmuOption(
