@@ -85,6 +85,10 @@ class AppSettingsController extends GetxController {
       LocalStorageService.kDanmuFontWeight,
       FontWeight.normal.value,
     );
+    danmuRenderEmoji.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuRenderEmoji,
+      true,
+    );
 
     hardwareDecode.value = LocalStorageService.instance.getValue(
       LocalStorageService.kHardwareDecode,
@@ -487,6 +491,15 @@ class AppSettingsController extends GetxController {
     danmuFontWeight.value = e;
     LocalStorageService.instance.setValue(
       LocalStorageService.kDanmuFontWeight,
+      e,
+    );
+  }
+
+  var danmuRenderEmoji = true.obs;
+  void setDanmuRenderEmoji(bool e) {
+    danmuRenderEmoji.value = e;
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuRenderEmoji,
       e,
     );
   }

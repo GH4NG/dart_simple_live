@@ -86,6 +86,16 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
               ),
               AppStyle.divider,
               Obx(
+                () => SettingsSwitch(
+                  title: "渲染表情",
+                  value: controller.danmuRenderEmoji.value,
+                  onChanged: (e) {
+                    controller.setDanmuRenderEmoji(e);
+                  },
+                ),
+              ),
+              AppStyle.divider,
+              Obx(
                 () => SettingsNumber(
                   title: "字体大小",
                   value: controller.danmuSize.toInt(),
