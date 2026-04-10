@@ -83,7 +83,7 @@ class AppSettingsController extends GetxController {
     );
     danmuFontWeight.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuFontWeight,
-      FontWeight.normal.value,
+      (FontWeight.normal.value / 100).toInt(),
     );
     danmuRenderEmoji.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuRenderEmoji,
