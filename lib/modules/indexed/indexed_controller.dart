@@ -15,20 +15,41 @@ import 'package:simple_live_app/modules/follow_user/follow_user_page.dart';
 import 'package:simple_live_app/modules/mine/mine_page.dart';
 
 class IndexedController extends GetxController
-    with GetSingleTickerProviderStateMixin {
+    with GetTickerProviderStateMixin {
   RxList<HomePageItem> items = RxList<HomePageItem>([]);
 
   var index = 0.obs;
 
   late TabController tabController;
-  RxList<Widget> pages = RxList<Widget>([
-    const SizedBox(),
-    const SizedBox(),
-    const SizedBox(),
-    const SizedBox(),
-  ]);
+  RxList<Widget> pages = RxList<Widget>([]);
+  final List<TabController> staleTabControllers = [];
 
   void setIndex(int i) {
+    final supportSites = Sites.supportSites;
+    if (supportSites.isNotEmpty &&
+        tabController.length != supportSites.length) {
+      var targetSiteIndex = tabController.index;
+      if (targetSiteIndex >= supportSites.length) {
+        targetSiteIndex = 0;
+      }
+      final oldTabController = tabController;
+      tabController = TabController(
+        length: supportSites.length,
+        vsync: this,
+        initialIndex: targetSiteIndex,
+      );
+      staleTabControllers.add(oldTabController);
+      for (var j = 0; j < items.length; j++) {
+        if (items[j].index == 0 || items[j].index == 2) {
+          pages[j] = const SizedBox();
+        }
+      }
+    }
+
+    if (i < 0 || i >= items.length || i >= pages.length) {
+      return;
+    }
+
     if (pages[i] is SizedBox) {
       switch (items[i].index) {
         case 0:
@@ -70,12 +91,16 @@ class IndexedController extends GetxController
     items.value = AppSettingsController.instance.homeSort
         .map((key) => Constant.allHomePages[key]!)
         .toList();
+    pages.value = List<Widget>.filled(items.length, const SizedBox());
     setIndex(0);
     super.onInit();
   }
 
   @override
   void onClose() {
+    for (final controller in staleTabControllers) {
+      controller.dispose();
+    }
     tabController.dispose();
     super.onClose();
   }

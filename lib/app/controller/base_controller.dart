@@ -124,6 +124,10 @@ class BasePageController<T> extends BaseController {
   }
 
   void scrollToTopOrRefresh() {
+    if (!scrollController.hasClients) {
+      easyRefreshController.callRefresh();
+      return;
+    }
     if (scrollController.offset > 0) {
       scrollController.animateTo(
         0,

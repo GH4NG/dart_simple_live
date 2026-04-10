@@ -328,43 +328,49 @@ class AppSettingsController extends GetxController {
   }
 
   void initSiteSort() {
-    var sort = LocalStorageService.instance
+    final sort = LocalStorageService.instance
         .getValue(
           LocalStorageService.kSiteSort,
           Sites.allSites.keys.join(","),
         )
-        .split(",");
+        .split(",")
+        .where(Sites.allSites.containsKey)
+        .toList();
     //如果数量与allSites的数量不一致，将缺失的添加上
-    if (sort.length != Sites.allSites.length) {
-      var keys = Sites.allSites.keys.toList();
-      for (var i = 0; i < keys.length; i++) {
-        if (!sort.contains(keys[i])) {
-          sort.add(keys[i]);
-        }
+    final normalizedSort = <String>[];
+    for (final key in sort) {
+      if (!normalizedSort.contains(key)) {
+        normalizedSort.add(key);
       }
     }
+    if (normalizedSort.isEmpty) {
+      normalizedSort.addAll(Sites.allSites.keys);
+    }
 
-    siteSort.value = sort;
+    siteSort.value = normalizedSort;
   }
 
   void initHomeSort() {
-    var sort = LocalStorageService.instance
+    final sort = LocalStorageService.instance
         .getValue(
           LocalStorageService.kHomeSort,
           Constant.allHomePages.keys.join(","),
         )
-        .split(",");
+        .split(",")
+        .where(Constant.allHomePages.containsKey)
+        .toList();
     //如果数量与allSites的数量不一致，将缺失的添加上
-    if (sort.length != Constant.allHomePages.length) {
-      var keys = Constant.allHomePages.keys.toList();
-      for (var i = 0; i < keys.length; i++) {
-        if (!sort.contains(keys[i])) {
-          sort.add(keys[i]);
-        }
+    final normalizedSort = <String>[];
+    for (final key in sort) {
+      if (!normalizedSort.contains(key)) {
+        normalizedSort.add(key);
       }
     }
+    if (normalizedSort.isEmpty) {
+      normalizedSort.addAll(Constant.allHomePages.keys);
+    }
 
-    homeSort.value = sort;
+    homeSort.value = normalizedSort;
   }
 
   void setNoFirstRun() {

@@ -104,13 +104,13 @@ jobs:
                       os: windows-2022
 
                     - platform: macos
-                      os: macos-latest
+                      os: macos-26
 
                     - platform: android
                       os: ubuntu-latest
 
                     - platform: ios
-                      os: macos-latest
+                      os: macos-26
 
         runs-on: ${{ matrix.os }}
         container: ${{ matrix.platform == 'linux' && 'archlinux:base-devel' || null }}

@@ -23,17 +23,24 @@ class CategoryController extends GetxController {
         }
       },
     );
-    for (var site in Sites.supportSites) {
-      Get.put(CategoryListController(site), tag: site.id);
-    }
-
     super.onInit();
   }
 
   void refreshOrScrollTop() {
+    final supportSites = Sites.supportSites;
+    if (supportSites.isEmpty) {
+      return;
+    }
     var tabIndex = tabController.index;
+    if (tabIndex >= supportSites.length) {
+      tabIndex = 0;
+    }
+    final site = supportSites[tabIndex];
+    if (!Get.isRegistered<CategoryListController>(tag: site.id)) {
+      Get.put(CategoryListController(site), tag: site.id);
+    }
     Get.find<CategoryListController>(
-      tag: Sites.supportSites[tabIndex].id,
+      tag: site.id,
     ).scrollToTopOrRefresh();
   }
 

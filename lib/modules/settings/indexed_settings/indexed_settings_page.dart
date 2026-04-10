@@ -27,23 +27,51 @@ class IndexedSettingsPage extends GetView<IndexedSettingsController> {
           ),
           SettingsCard(
             child: Obx(
-              () => ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onReorder: controller.updateHomeSort,
-                children: controller.homeSort.map(
-                  (key) {
-                    var e = Constant.allHomePages[key]!;
-                    return ListTile(
-                      key: ValueKey(e.title),
-                      title: Text(e.title),
-                      visualDensity: VisualDensity.compact,
-                      leading: Icon(e.iconData),
-                      trailing: const Icon(Icons.drag_handle),
-                    );
-                  },
-                ).toList(),
-              ),
+              () {
+                final homeOrder = [
+                  ...controller.homeSort,
+                  ...controller.allHomeKeys.where(
+                    (key) => !controller.homeSort.contains(key),
+                  ),
+                ];
+                return ReorderableListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onReorder: controller.updateHomeSort,
+                  children: List.generate(
+                    homeOrder.length,
+                    (index) {
+                      final key = homeOrder[index];
+                      final e = Constant.allHomePages[key]!;
+                      final isMine = key == "user";
+                      return ListTile(
+                        key: ValueKey(key),
+                        title: Text(e.title),
+                        visualDensity: VisualDensity.compact,
+                        leading: Icon(e.iconData),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: controller.isHomeEnabled(key),
+                              onChanged: isMine
+                                  ? null
+                                  : (value) => controller.toggleHomeVisible(
+                                      key,
+                                      value ?? false,
+                                    ),
+                            ),
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: const Icon(Icons.drag_handle),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
           Padding(
@@ -55,30 +83,55 @@ class IndexedSettingsPage extends GetView<IndexedSettingsController> {
           ),
           SettingsCard(
             child: Obx(
-              () => ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onReorder: controller.updateSiteSort,
-                children: controller.siteSort
-                    .where((key) => Sites.allSites[key]?.name != 'Twitch')
-                    .map(
-                      (key) {
-                        var e = Sites.allSites[key]!;
-                        return ListTile(
-                          key: ValueKey(e.id),
-                          visualDensity: VisualDensity.compact,
-                          title: Text(e.name),
-                          leading: Image.asset(
-                            e.logo,
-                            width: 24,
-                            height: 24,
-                          ),
-                          trailing: const Icon(Icons.drag_handle),
-                        );
-                      },
-                    )
-                    .toList(),
-              ),
+              () {
+                final siteOrder = [
+                  ...controller.siteSort.where(
+                    (key) => key != Constant.kTwitch,
+                  ),
+                  ...controller.allSiteKeys.where(
+                    (key) => !controller.siteSort.contains(key),
+                  ),
+                ];
+                return ReorderableListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onReorder: controller.updateSiteSort,
+                  children: List.generate(
+                    siteOrder.length,
+                    (index) {
+                      final key = siteOrder[index];
+                      final e = Sites.allSites[key]!;
+                      return ListTile(
+                        key: ValueKey(e.id),
+                        visualDensity: VisualDensity.compact,
+                        title: Text(e.name),
+                        leading: Image.asset(
+                          e.logo,
+                          width: 24,
+                          height: 24,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: controller.isSiteEnabled(key),
+                              onChanged: (value) =>
+                                  controller.toggleSiteVisible(
+                                    key,
+                                    value ?? false,
+                                  ),
+                            ),
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: const Icon(Icons.drag_handle),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],
