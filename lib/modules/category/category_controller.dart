@@ -6,17 +6,13 @@ import 'package:get/get.dart';
 import 'package:simple_live_app/app/event_bus.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/modules/category/category_list_controller.dart';
+import 'package:simple_live_app/modules/indexed/indexed_controller.dart';
 
-class CategoryController extends GetxController
-    with GetSingleTickerProviderStateMixin {
-  late TabController tabController;
-  CategoryController() {
-    tabController = TabController(
-      length: Sites.supportSites.length,
-      vsync: this,
-    );
-  }
+class CategoryController extends GetxController {
+  TabController get tabController =>
+      Get.find<IndexedController>().tabController;
   StreamSubscription<dynamic>? streamSubscription;
+
   @override
   void onInit() {
     streamSubscription = EventBus.instance.listen(

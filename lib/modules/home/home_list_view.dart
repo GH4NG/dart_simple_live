@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/modules/home/home_list_controller.dart';
 import 'package:simple_live_app/widgets/keep_alive_wrapper.dart';
 import 'package:simple_live_app/widgets/live_room_card.dart';
@@ -10,7 +11,14 @@ import 'package:simple_live_app/widgets/page_grid_view.dart';
 class HomeListView extends StatelessWidget {
   final String tag;
   const HomeListView(this.tag, {super.key});
-  HomeListController get controller => Get.find<HomeListController>(tag: tag);
+  HomeListController get controller {
+    if (!Get.isRegistered<HomeListController>(tag: tag)) {
+      final site = Sites.allSites[tag]!;
+      Get.put(HomeListController(site), tag: tag);
+    }
+    return Get.find<HomeListController>(tag: tag);
+  }
+
   @override
   Widget build(BuildContext context) {
     var c = MediaQuery.of(context).size.width ~/ 200;

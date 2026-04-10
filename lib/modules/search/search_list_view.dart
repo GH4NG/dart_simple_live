@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/modules/search/search_list_controller.dart';
 import 'package:simple_live_app/routes/app_navigation.dart';
 import 'package:simple_live_app/widgets/keep_alive_wrapper.dart';
@@ -13,8 +14,14 @@ import 'package:simple_live_core/simple_live_core.dart';
 class SearchListView extends StatelessWidget {
   final String tag;
   const SearchListView(this.tag, {super.key});
-  SearchListController get controller =>
-      Get.find<SearchListController>(tag: tag);
+  SearchListController get controller {
+    if (!Get.isRegistered<SearchListController>(tag: tag)) {
+      final site = Sites.allSites[tag]!;
+      Get.put(SearchListController(site), tag: tag);
+    }
+    return Get.find<SearchListController>(tag: tag);
+  }
+
   @override
   Widget build(BuildContext context) {
     var roomRowCount = MediaQuery.of(context).size.width ~/ 200;

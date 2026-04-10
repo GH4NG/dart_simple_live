@@ -4,42 +4,16 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/sites.dart';
+import 'package:simple_live_app/modules/indexed/indexed_controller.dart';
 import 'package:simple_live_app/modules/search/search_list_controller.dart';
 
-class AppSearchController extends GetxController
-    with GetSingleTickerProviderStateMixin {
-  late TabController tabController;
+class AppSearchController extends GetxController {
+  TabController get tabController =>
+      Get.find<IndexedController>().tabController;
+
   int index = 0;
 
   var searchMode = 0.obs;
-
-  AppSearchController() {
-    tabController = TabController(
-      length: Sites.supportSites.length,
-      vsync: this,
-    );
-    tabController.animation?.addListener(() {
-      var currentIndex = (tabController.animation?.value ?? 0).round();
-      if (index == currentIndex) {
-        return;
-      }
-
-      index = currentIndex;
-      // if (Sites.supportSites[index].id == Constant.kDouyin) {
-      //   return;
-      // }
-
-      var controller = Get.find<SearchListController>(
-        tag: Sites.supportSites[index].id,
-      );
-
-      if (controller.list.isEmpty &&
-          !controller.pageEmpty.value &&
-          controller.keyword.isNotEmpty) {
-        controller.refreshData();
-      }
-    });
-  }
 
   StreamSubscription<dynamic>? streamSubscription;
 

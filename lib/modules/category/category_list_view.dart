@@ -3,6 +3,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/modules/category/category_list_controller.dart';
 import 'package:simple_live_app/routes/app_navigation.dart';
 import 'package:simple_live_app/widgets/keep_alive_wrapper.dart';
@@ -14,8 +15,14 @@ import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 class CategoryListView extends StatelessWidget {
   final String tag;
   const CategoryListView(this.tag, {super.key});
-  CategoryListController get controller =>
-      Get.find<CategoryListController>(tag: tag);
+  CategoryListController get controller {
+    if (!Get.isRegistered<CategoryListController>(tag: tag)) {
+      final site = Sites.allSites[tag]!;
+      Get.put(CategoryListController(site), tag: tag);
+    }
+    return Get.find<CategoryListController>(tag: tag);
+  }
+
   @override
   Widget build(BuildContext context) {
     return KeepAliveWrapper(
