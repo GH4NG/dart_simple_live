@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/tv_regions.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/models/db/follow_user.dart';
 import 'package:simple_live_app/widgets/net_image.dart';
+import 'package:simple_live_app/widgets/tv_focusable.dart';
 
 class FollowUserItem extends StatefulWidget {
   final FollowUser item;
@@ -11,6 +13,8 @@ class FollowUserItem extends StatefulWidget {
   final Function()? onTap;
   final Function()? onLongPress;
   final bool playing;
+  final bool autofocus;
+  final bool isEntryPoint;
 
   const FollowUserItem({
     required this.item,
@@ -18,6 +22,8 @@ class FollowUserItem extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.playing = false,
+    this.autofocus = false,
+    this.isEntryPoint = false,
     super.key,
   });
 
@@ -51,7 +57,7 @@ class _FollowUserItemState extends State<FollowUserItem>
     final bool isLive = item.liveStatus.value == 2;
     final String liveArea = (item.liveAreaName.value).trim();
 
-    return Material(
+    final child = Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: widget.onTap,
@@ -254,6 +260,16 @@ class _FollowUserItemState extends State<FollowUserItem>
           ),
         ),
       ),
+    );
+
+    return TvFocusable(
+      onSelect: widget.onTap,
+      autofocus: widget.autofocus,
+      region: TvRegions.content,
+      isEntryPoint: widget.isEntryPoint,
+      borderRadius: AppStyle.radius12,
+      debugLabel: 'follow_user_${item.siteId}_${item.roomId}',
+      child: child,
     );
   }
 

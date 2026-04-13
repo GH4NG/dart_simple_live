@@ -100,6 +100,7 @@ dependencies:
 
     fvp: ^0.35.2
     fractional_indexing_dart: ^1.0.7
+    dpad: ^2.0.2
 
 dependency_overrides:
     media_kit:

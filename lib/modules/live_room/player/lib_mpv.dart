@@ -96,6 +96,7 @@ class LibMPV extends BasePlayer {
     Key key,
     double? aspectRatio,
     BoxFit fit,
+    bool showControls,
   ) {
     if (_controller == null) {
       return null;
@@ -107,9 +108,11 @@ class LibMPV extends BasePlayer {
       controller: _controller!,
       pauseUponEnteringBackgroundMode: settings.playerAutoPause.value,
       resumeUponEnteringForegroundMode: settings.playerAutoPause.value,
-      controls: (state) {
-        return playerControls(state.context, roomController);
-      },
+      controls: showControls
+          ? (state) {
+              return playerControls(state.context, roomController);
+            }
+          : null,
       aspectRatio: aspectRatio,
       fit: fit,
     );

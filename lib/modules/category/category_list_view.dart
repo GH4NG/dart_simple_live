@@ -1,20 +1,21 @@
-import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
 import 'package:simple_live_app/app/sites.dart';
+import 'package:simple_live_app/app/tv_regions.dart';
 import 'package:simple_live_app/modules/category/category_list_controller.dart';
 import 'package:simple_live_app/routes/app_navigation.dart';
 import 'package:simple_live_app/widgets/keep_alive_wrapper.dart';
 import 'package:simple_live_app/widgets/net_image.dart';
 import 'package:simple_live_app/widgets/shadow_card.dart';
 import 'package:simple_live_core/simple_live_core.dart';
-import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 
 class CategoryListView extends StatelessWidget {
   final String tag;
   const CategoryListView(this.tag, {super.key});
+
   CategoryListController get controller {
     if (!Get.isRegistered<CategoryListController>(tag: tag)) {
       final site = Sites.allSites[tag]!;
@@ -38,7 +39,7 @@ class CategoryListView extends StatelessWidget {
               physics: physics,
               controller: controller.scrollController,
               slivers: [
-                for (var item in controller.list)
+                for (final item in controller.list)
                   SliverStickyHeader(
                     header: Container(
                       padding: AppStyle.edgeInsetsV8.copyWith(left: 4),
@@ -73,13 +74,23 @@ class CategoryListView extends StatelessWidget {
                                         : null);
 
                               if (subItem != null) {
-                                return buildSubCategory(subItem, controller);
-                              } else if (!item.showAll.value &&
-                                  index == item.take15.length) {
-                                return buildShowMore(item, controller);
-                              } else {
-                                return const SizedBox.shrink();
+                                return buildSubCategory(
+                                  subItem,
+                                  controller,
+                                  autofocus: index == 0,
+                                  isEntryPoint: index == 0,
+                                );
                               }
+                              if (!item.showAll.value &&
+                                  index == item.take15.length) {
+                                return buildShowMore(
+                                  item,
+                                  controller,
+                                  autofocus: index == 0,
+                                  isEntryPoint: index == 0,
+                                );
+                              }
+                              return const SizedBox.shrink();
                             },
                             childCount: item.showAll.value
                                 ? item.children.length
@@ -99,17 +110,23 @@ class CategoryListView extends StatelessWidget {
 
   Widget buildSubCategory(
     LiveSubCategory item,
-    CategoryListController controller,
-  ) {
+    CategoryListController controller, {
+    bool autofocus = false,
+    bool isEntryPoint = false,
+  }) {
     return ShadowCard(
       onTap: () {
         AppNavigator.toCategoryDetail(site: controller.site, category: item);
       },
+      dpadAutofocus: autofocus,
+      dpadEntryPoint: isEntryPoint,
+      dpadRegion: TvRegions.content,
+      dpadDebugLabel: 'category_${controller.site.id}_${item.id}',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           NetImage(
-            item.pic ?? "",
+            item.pic ?? '',
             width: 40,
             height: 40,
             borderRadius: 8,
@@ -128,12 +145,18 @@ class CategoryListView extends StatelessWidget {
 
   Widget buildShowMore(
     AppLiveCategory item,
-    CategoryListController controller,
-  ) {
+    CategoryListController controller, {
+    bool autofocus = false,
+    bool isEntryPoint = false,
+  }) {
     return ShadowCard(
       onTap: () {
         item.showAll.value = true;
       },
+      dpadAutofocus: autofocus,
+      dpadEntryPoint: isEntryPoint,
+      dpadRegion: TvRegions.content,
+      dpadDebugLabel: 'category_more_${controller.site.id}_${item.name}',
       child: const Center(
         child: Text(
           "显示全部",

@@ -1,8 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -96,6 +97,18 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   var loadError = false.obs;
   Error? error;
 
+  // TV端返回键提示再次点击退出的时间间隔
+  static const Duration tvExitToastDuration = Duration(seconds: 2);
+
+  // TV端播放器Key
+  final RxBool tvOverlayVisible = false.obs;
+
+  // TV端播放器控制覆盖层定时器
+  Timer? _tvOverlayTimer;
+
+  // TV端播放器最后一次点击返回键的时间
+  DateTime? _tvLastBackPressedAt;
+
   // 开播时长状态变量
   var liveDuration = "00:00:00".obs;
   Timer? _liveDurationTimer;
@@ -179,6 +192,43 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     liveDanmaku.stop();
 
     loadData();
+  }
+
+  void showTvControls() {
+    tvOverlayVisible.value = true;
+    Dpad.clearFocus();
+    resetTvOverlayTimer();
+  }
+
+  void hideTvControls() {
+    _tvOverlayTimer?.cancel();
+    tvOverlayVisible.value = false;
+    Dpad.clearFocus();
+  }
+
+  void resetTvOverlayTimer() {
+    _tvOverlayTimer?.cancel();
+    _tvOverlayTimer = Timer(const Duration(seconds: 8), hideTvControls);
+  }
+
+  void handleTvBackPressed() {
+    if (tvOverlayVisible.value) {
+      hideTvControls();
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_tvLastBackPressedAt != null &&
+        now.difference(_tvLastBackPressedAt!) <= tvExitToastDuration) {
+      Get.back();
+      return;
+    }
+
+    _tvLastBackPressedAt = now;
+    SmartDialog.showToast(
+      "再按一次返回键退出直播间",
+      displayTime: tvExitToastDuration,
+    );
   }
 
   /// 聊天栏始终滚动到底部
@@ -1014,6 +1064,8 @@ ${error?.stackTrace}''');
     WidgetsBinding.instance.removeObserver(this);
     scrollController.removeListener(scrollListener);
     autoExitTimer?.cancel();
+    _tvOverlayTimer?.cancel();
+    tvOverlayVisible.value = false;
     HistoryService.instance.stop();
 
     liveDanmaku.stop();

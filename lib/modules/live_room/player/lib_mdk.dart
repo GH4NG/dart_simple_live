@@ -67,6 +67,7 @@ class LibMDK extends BasePlayer {
     Key key,
     double? aspectRatio,
     BoxFit fit,
+    bool showControls,
   ) {
     final controller = Get.find<LiveRoomController>();
 
@@ -108,7 +109,7 @@ class LibMDK extends BasePlayer {
                       ),
                     ),
                   ),
-                  playerControls(context, controller),
+                  if (showControls) playerControls(context, controller),
                 ],
               ),
             );

@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:simple_live_app/app/app_style.dart';
 import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/app/sites.dart';
+import 'package:simple_live_app/app/tv_regions.dart';
 import 'package:simple_live_app/modules/follow_user/follow_user_controller.dart';
 import 'package:simple_live_app/routes/app_navigation.dart';
 import 'package:simple_live_app/routes/route_path.dart';
@@ -154,10 +155,12 @@ class FollowUserPage extends GetView<FollowUserController> {
                       refreshOnStart: true,
                       showPCRefreshButton: false,
                       itemBuilder: (_, i) {
-                        var item = controller.list[i];
-                        var site = Sites.allSites[item.siteId]!;
+                        final item = controller.list[i];
+                        final site = Sites.allSites[item.siteId]!;
                         return FollowUserItem(
                           item: item,
+                          autofocus: i == 0,
+                          isEntryPoint: i == 0,
                           onRemove: () {
                             controller.removeFollow(item);
                           },
@@ -183,9 +186,9 @@ class FollowUserPage extends GetView<FollowUserController> {
                         crossAxisSpacing: 12,
                         crossAxisCount: c,
                         itemBuilder: (_, i) {
-                          var item = controller.list[i];
+                          final item = controller.list[i];
                           // 或许直接继承字段更好，标记工作
-                          LiveRoomItem liveRoomItem = LiveRoomItem(
+                          final liveRoomItem = LiveRoomItem(
                             roomId: item.roomId,
                             title: item.liveTitle.value,
                             cover: item.cover.value,
@@ -195,10 +198,13 @@ class FollowUserPage extends GetView<FollowUserController> {
                             userAvatar: item.face,
                             online: item.online.value,
                           );
-                          var site = Sites.allSites[item.siteId]!;
+                          final site = Sites.allSites[item.siteId]!;
                           return LiveRoomCard(
                             site,
                             liveRoomItem,
+                            autofocus: i == 0,
+                            isEntryPoint: i == 0,
+                            dpadRegion: TvRegions.content,
                             onLongPress: () {
                               controller.showBottomMenu(item);
                             },

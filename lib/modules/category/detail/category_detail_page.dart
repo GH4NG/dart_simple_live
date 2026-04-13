@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
+import 'package:simple_live_app/app/tv_regions.dart';
 import 'package:simple_live_app/modules/category/detail/category_detail_controller.dart';
 import 'package:simple_live_app/widgets/keep_alive_wrapper.dart';
 import 'package:simple_live_app/widgets/live_room_card.dart';
@@ -30,7 +31,13 @@ class CategoryDetailPage extends GetView<CategoryDetailController> {
           crossAxisCount: c,
           itemBuilder: (_, i) {
             var item = controller.list[i];
-            return LiveRoomCard(controller.site, item);
+            return LiveRoomCard(
+              controller.site,
+              item,
+              autofocus: i == 0,
+              isEntryPoint: i == 0,
+              dpadRegion: TvRegions.content,
+            );
           },
         ),
       ),

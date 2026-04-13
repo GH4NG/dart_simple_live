@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:floating/floating.dart';
 import 'package:flutter/material.dart';
@@ -274,6 +274,7 @@ class LiveRoomPage extends GetView<LiveRoomController> {
                 controller.globalPlayerKey,
                 aspectRatio,
                 boxFit,
+                true,
               ) ??
               const SizedBox();
         }),

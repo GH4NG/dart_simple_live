@@ -17,6 +17,7 @@ abstract class BasePlayer {
     Key key,
     double? aspectRatio,
     BoxFit fit,
+    bool showControls,
   );
 
   Future<void> dispose();

@@ -13,7 +13,20 @@ class LiveRoomCard extends StatelessWidget {
   final Site site;
   final LiveRoomItem item;
   final Function()? onLongPress;
-  const LiveRoomCard(this.site, this.item, {super.key, this.onLongPress});
+  final bool autofocus;
+  final bool isEntryPoint;
+  final int entryPriority;
+  final String? dpadRegion;
+  const LiveRoomCard(
+    this.site,
+    this.item, {
+    this.onLongPress,
+    this.autofocus = false,
+    this.isEntryPoint = false,
+    this.entryPriority = 0,
+    this.dpadRegion,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +35,11 @@ class LiveRoomCard extends StatelessWidget {
         AppNavigator.toLiveRoomDetail(site: site, roomId: item.roomId);
       },
       onLongPress: onLongPress,
+      dpadAutofocus: autofocus,
+      dpadEntryPoint: isEntryPoint,
+      dpadEntryPriority: entryPriority,
+      dpadRegion: dpadRegion,
+      dpadDebugLabel: 'live_room_${site.id}_${item.roomId}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

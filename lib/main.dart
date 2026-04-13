@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dpad/dpad.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:simple_live_app/app/tv_regions.dart';
+import 'package:simple_live_app/app/utils/platform_utils.dart';
 import 'package:simple_live_app/services/firebase_service.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -45,6 +48,7 @@ void main() async {
         ? (await getApplicationSupportDirectory()).path
         : null,
   );
+  await PlatformUtils.init();
   //初始化服务
   await initServices();
   await initWindow();
@@ -119,7 +123,7 @@ class MyApp extends StatelessWidget {
     bool isDynamicColor = AppSettingsController.instance.isDynamic.value;
     Color styleColor = Color(AppSettingsController.instance.styleColor.value);
     return DynamicColorBuilder(
-      builder: ((ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         ColorScheme? lightColorScheme;
         ColorScheme? darkColorScheme;
         if (lightDynamic != null && darkDynamic != null && isDynamicColor) {
@@ -136,104 +140,141 @@ class MyApp extends StatelessWidget {
           );
         }
         return Obx(
-          () => GetMaterialApp(
-            title: "Simple Live",
-            theme: AppStyle.lightTheme.copyWith(colorScheme: lightColorScheme),
-            darkTheme: AppStyle.darkTheme.copyWith(
-              colorScheme: darkColorScheme,
+          () => DpadNavigator(
+            enabled: PlatformUtils.isAndroidTV,
+            focusMemory: const FocusMemoryOptions(
+              enabled: true,
+              maxHistory: 30,
             ),
-
-            themeMode: ThemeMode
-                .values[Get.find<AppSettingsController>().themeMode.value],
-            initialRoute: RoutePath.kIndex,
-            getPages: AppPages.routes,
-            //国际化
-            locale: const Locale("zh", "CN"),
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale("zh", "CN")],
-            logWriterCallback: (text, {bool? isError}) {
-              if (isError ?? false) {
-                SimpleLiveLogger().e(text);
-              } else {
-                SimpleLiveLogger().d(text);
+            regionNavigation: const RegionNavigationOptions(
+              enabled: true,
+              rules: [
+                RegionNavigationRule(
+                  fromRegion: TvRegions.sidebar,
+                  toRegion: TvRegions.tabs,
+                  direction: TraversalDirection.right,
+                  strategy: RegionNavigationStrategy.fixedEntry,
+                  bidirectional: true,
+                ),
+                RegionNavigationRule(
+                  fromRegion: TvRegions.tabs,
+                  toRegion: TvRegions.content,
+                  direction: TraversalDirection.down,
+                  strategy: RegionNavigationStrategy.fixedEntry,
+                  bidirectional: true,
+                ),
+              ],
+            ),
+            onBackPressed: () {
+              if ((Get.isDialogOpen ?? false) ||
+                  (Get.isBottomSheetOpen ?? false) ||
+                  (Get.key.currentState?.canPop() ?? false)) {
+                Get.back();
               }
             },
-            // 升级后Android页面过渡动画似乎有BUG
-            defaultTransition: Platform.isAndroid ? Transition.cupertino : null,
-            //debugShowCheckedModeBanner: false,
-            navigatorObservers: [
-              FlutterSmartDialog.observer,
-            ],
-            builder: FlutterSmartDialog.init(
-              loadingBuilder: ((msg) => const AppLoadingWidget()),
-              //字体大小不跟随系统变化
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.noScaling),
-                child: Stack(
-                  children: [
-                    //侧键返回
-                    RawGestureDetector(
-                      excludeFromSemantics: true,
-                      gestures: <Type, GestureRecognizerFactory>{
-                        FourthButtonTapGestureRecognizer:
-                            GestureRecognizerFactoryWithHandlers<
-                              FourthButtonTapGestureRecognizer
-                            >(
-                              FourthButtonTapGestureRecognizer.new,
-                              (FourthButtonTapGestureRecognizer instance) {
-                                instance.onTapDown =
-                                    (TapDownDetails details) async {
-                                      //如果处于全屏状态，退出全屏
-                                      if (!Platform.isAndroid &&
-                                          !Platform.isIOS) {
-                                        if (await windowManager
-                                            .isFullScreen()) {
-                                          await windowManager.setFullScreen(
-                                            false,
-                                          );
-                                          return;
+            child: GetMaterialApp(
+              title: "Simple Live",
+              theme: AppStyle.lightTheme.copyWith(
+                colorScheme: lightColorScheme,
+              ),
+              darkTheme: AppStyle.darkTheme.copyWith(
+                colorScheme: darkColorScheme,
+              ),
+
+              themeMode: ThemeMode
+                  .values[Get.find<AppSettingsController>().themeMode.value],
+              initialRoute: RoutePath.kIndex,
+              getPages: AppPages.routes,
+              //国际化
+              locale: const Locale("zh", "CN"),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale("zh", "CN")],
+              logWriterCallback: (text, {bool? isError}) {
+                if (isError ?? false) {
+                  SimpleLiveLogger().e(text);
+                } else {
+                  SimpleLiveLogger().d(text);
+                }
+              },
+              // 升级后Android页面过渡动画似乎有BUG
+              defaultTransition: Platform.isAndroid
+                  ? Transition.cupertino
+                  : null,
+              //debugShowCheckedModeBanner: false,
+              navigatorObservers: [
+                FlutterSmartDialog.observer,
+              ],
+              builder: FlutterSmartDialog.init(
+                loadingBuilder: (msg) => const AppLoadingWidget(),
+                //字体大小不跟随系统变化
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.noScaling),
+                  child: Stack(
+                    children: [
+                      //侧键返回
+                      RawGestureDetector(
+                        excludeFromSemantics: true,
+                        gestures: <Type, GestureRecognizerFactory>{
+                          FourthButtonTapGestureRecognizer:
+                              GestureRecognizerFactoryWithHandlers<
+                                FourthButtonTapGestureRecognizer
+                              >(
+                                FourthButtonTapGestureRecognizer.new,
+                                (FourthButtonTapGestureRecognizer instance) {
+                                  instance.onTapDown =
+                                      (TapDownDetails details) async {
+                                        //如果处于全屏状态，退出全屏
+                                        if (!Platform.isAndroid &&
+                                            !Platform.isIOS) {
+                                          if (await windowManager
+                                              .isFullScreen()) {
+                                            await windowManager.setFullScreen(
+                                              false,
+                                            );
+                                            return;
+                                          }
                                         }
-                                      }
-                                      Get.back();
-                                    };
-                              },
-                            ),
-                      },
-                      child: KeyboardListener(
-                        focusNode: FocusNode(),
-                        onKeyEvent: (KeyEvent event) async {
-                          if (event is KeyDownEvent &&
-                              event.logicalKey == LogicalKeyboardKey.escape) {
-                            // ESC退出全屏
-                            // 如果处于全屏状态，退出全屏
-                            if (!Platform.isAndroid && !Platform.isIOS) {
-                              if (await windowManager.isFullScreen()) {
-                                await windowManager.setFullScreen(false);
-                                EventBus.instance.emit(
-                                  EventBus.kEscapePressed,
-                                  0,
-                                );
-                                return;
+                                        Get.back();
+                                      };
+                                },
+                              ),
+                        },
+                        child: KeyboardListener(
+                          focusNode: FocusNode(),
+                          onKeyEvent: (KeyEvent event) async {
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.escape) {
+                              // ESC退出全屏
+                              // 如果处于全屏状态，退出全屏
+                              if (!Platform.isAndroid && !Platform.isIOS) {
+                                if (await windowManager.isFullScreen()) {
+                                  await windowManager.setFullScreen(false);
+                                  EventBus.instance.emit(
+                                    EventBus.kEscapePressed,
+                                    0,
+                                  );
+                                  return;
+                                }
                               }
                             }
-                          }
-                        },
-                        child: child!,
+                          },
+                          child: child!,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         );
-      }),
+      },
     );
   }
 }
